@@ -43,6 +43,7 @@ class Motors:
         torque_coef: np.ndarray,
         thrust_unit: np.ndarray,
         noise_ratio: np.ndarray,
+        noise_active: bool = True,
     ):
         """Used for simulating an array of motors.
 
@@ -86,6 +87,7 @@ class Motors:
         self.torque_coef = np.expand_dims(torque_coef, axis=-1)
         self.thrust_unit = np.expand_dims(thrust_unit, axis=-1)
         self.noise_ratio = noise_ratio
+        self.noise_active = noise_active
 
     def reset(self):
         """Reset the motors."""
@@ -124,11 +126,12 @@ class Motors:
         self.throttle += (self.physics_period / self.tau) * (pwm - self.throttle)
 
         # noise in the motor
-        self.throttle += (
-            self.np_random.randn(*self.throttle.shape)
-            * self.throttle
-            * self.noise_ratio
-        )
+        if self.noise_active:
+            self.throttle += (
+                self.np_random.randn(*self.throttle.shape)
+                * self.throttle
+                * self.noise_ratio
+            )
 
         # compute thrust and torque in jitted manner
         (thrust, torque) = self._jitted_compute_thrust_torque(

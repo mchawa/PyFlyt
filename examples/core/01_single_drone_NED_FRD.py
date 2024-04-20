@@ -5,11 +5,18 @@ import numpy as np
 from PyFlyt.core import Aviary
 
 # the starting position and orientations
-start_pos = np.array([[0.0, 0.0, 1.0]])
+start_pos = np.array([[0.0, 0.0, -1.0]])
 start_orn = np.array([[0.0, 0.0, 0.0]])
 
 # environment setup
-env = Aviary(start_pos=start_pos, start_orn=start_orn, render=True, drone_type="quadx")
+env = Aviary(
+    start_pos=start_pos,
+    start_orn=start_orn,
+    render=True,
+    darw_local_axis=True,
+    drone_type="quadx",
+    orn_conv="NED_FRD",
+)
 
 # set to position control
 env.set_mode(7)
