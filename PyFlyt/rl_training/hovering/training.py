@@ -51,8 +51,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=15)
     parser.add_argument("--num_of_layers", type=int, default=2)
     parser.add_argument("--layer_size", type=int, default=256)
-    parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
-    # parser.add_argument("--num_of_workers", type=int, default=1)
+    # parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
+    parser.add_argument("--num_of_workers", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -70,15 +70,15 @@ if __name__ == "__main__":
     tensorboard_log_path = os.path.join(output_save_path, "tensorboard")
 
     # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
-    net_arch = dict(vf=[256, 128, 64, 32], pi=[256, 128, 64, 32])
+    # net_arch = dict(vf=[256, 128, 64, 32], pi=[256, 128, 64, 32])
     # net_arch.append({"vf": [128], "pi": [64]})
 
-    policy_kwargs = {
-        "net_arch": net_arch,
-        "features_extractor_class": CustomFeatureExtractor,
-        "features_extractor_kwargs": {"features_dim": 256},
-        "share_features_extractor": True,
-    }
+    # policy_kwargs = {
+    #     "net_arch": net_arch,
+    #     "features_extractor_class": CustomFeatureExtractor,
+    #     "features_extractor_kwargs": {"features_dim": 256},
+    #     "share_features_extractor": True,
+    # }
 
     # Create hovering environment
     env_kwargs = {}
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     eval_callback = CustomEvalCallback(
         eval_env=eval_env,
         n_eval_episodes=5,
-        eval_freq=(args.update_each_steps + 1),
+        eval_freq=(4 * (args.update_each_steps) + 1),
         log_path=output_save_path,
         best_model_save_path=output_save_path,
         render=False,
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         n_steps=args.update_each_steps,
         n_epochs=args.n_epochs,
         tensorboard_log=tensorboard_log_path,
-        policy_kwargs=policy_kwargs,
+        # policy_kwargs=policy_kwargs,
         verbose=1,
     )
 

@@ -30,8 +30,8 @@ class QuadXBaseEnv(gymnasium.Env):
         drone_model: str = "cf2x",
         simulate_wind: bool = False,
         flight_mode: int = 0,
-        flight_dome_size: float = 100,
-        max_duration_seconds: float = 30.0,
+        flight_dome_size: float = 10,
+        max_duration_seconds: float = 10.0,
         angle_representation: str = "quaternion",
         add_prev_actions_to_obs: bool = False,
         add_motors_state_to_obs: bool = False,
@@ -83,7 +83,10 @@ class QuadXBaseEnv(gymnasium.Env):
             )
 
         self.attitude_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(attitude_shape,), dtype=np.float32
+            low=np.array([-130, -130, -130, -2, -2, -2, -50, -50, -50, -20, -20, -20]),
+            high=np.array([130, 130, 130, 2, 2, 2, 50, 50, 50, 20, 20, 20]),
+            shape=(attitude_shape,),
+            dtype=np.float32,
         )
         self.auxiliary_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
@@ -148,12 +151,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 dtype=np.float32,
             )
         else:
-            self.combined_space = spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(attitude_shape,),
-                dtype=np.float32,
-            )
+            self.combined_space = self.attitude_space
 
         """ ENVIRONMENT CONSTANTS """
         self.orn_conv = orn_conv
@@ -289,15 +287,13 @@ class QuadXBaseEnv(gymnasium.Env):
         raw_state = self.env.state(0)
 
         # state breakdown
-        ang_vel = np.round(raw_state[0], 3).astype(np.float32)
-        ang_pos = np.round(raw_state[1], 3).astype(np.float32)
-        lin_vel = np.round(raw_state[2], 3).astype(np.float32)
-        lin_pos = np.round(raw_state[3], 3).astype(np.float32)
+        ang_vel = raw_state[0]
+        ang_pos = raw_state[1]
+        lin_vel = raw_state[2]
+        lin_pos = raw_state[3]
 
         # quarternion angles
-        quarternion = np.round(p.getQuaternionFromEuler(raw_state[1]), 3).astype(
-            np.float32
-        )
+        quarternion = p.getQuaternionFromEuler(raw_state[1])
 
         return ang_vel, ang_pos, lin_vel, lin_pos, quarternion
 
@@ -308,23 +304,21 @@ class QuadXBaseEnv(gymnasium.Env):
     def compute_base_term_trunc_reward(self) -> None:
         """compute_base_term_trunc_reward."""
         # exceed step count
-        if self.step_count > self.max_steps:
+        if self.step_count >= self.max_steps:
             self.info["TimeLimit.truncated"] = True
             self.truncation |= True
 
         # collision
         if np.any(self.env.contact_array):
-            self.reward = -10 * (self.max_steps - self.step_count)
-            # self.reward = -100
+            self.reward = -100
             self.info["collision"] = True
             self.termination |= True
 
         # exceed flight dome
-        # if np.linalg.norm(self.env.state(0)[-1]) > self.flight_dome_size:
-        #     # self.reward = -10 * (self.max_steps - self.step_count)
-        #     self.reward = -100
-        #     self.info["out_of_bounds"] = True
-        #     self.termination |= True
+        if np.linalg.norm(self.env.state(0)[-1]) > self.flight_dome_size:
+            self.reward = -100
+            self.info["out_of_bounds"] = True
+            self.termination |= True
 
     def step(self, action: np.ndarray) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         """Steps the environment.

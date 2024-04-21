@@ -44,7 +44,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
         add_motors_state_to_obs: bool = False,
         alpha: float = 1,
         beta: float = 0.1,
-        gamma: float = 0.1,
+        gamma: float = 1,
         delta: float = 0.1,
         normalize_actions: bool = True,
         render_mode: None | str = None,
@@ -117,12 +117,12 @@ class QuadXHoverEnv(QuadXBaseEnv):
             self.start_pos = np.array([[x, y, z]], dtype=np.float32).round(3)
 
             # Initialize the orientation
-            # Initalize phi randomly between 10deg and -10deg in radians
+            # Initalize phi randomly between -10deg and 10deg in radians
             phi = np.random.uniform(-0.174533, 0.174533)
-            # Initalize theta randomly between 10deg and -10deg in radians
+            # Initalize theta randomly between -10deg and 10deg in radians
             theta = np.random.uniform(-0.174533, 0.174533)
-            # Initalize psi randomly between 0 and 2*pi
-            psi = np.random.uniform(0, 6.28319)
+            # Initalize psi randomly between -pi/2 and 3/2*pi
+            psi = np.random.uniform(-1.5708, 4.71239)
 
             self.start_orn = np.array([[phi, theta, psi]], dtype=np.float32).round(3)
 
@@ -147,9 +147,9 @@ class QuadXHoverEnv(QuadXBaseEnv):
         self.ang_pos = ang_pos
 
         ang_pos_error = np.array(
-            ang_pos - [0, 0, self.start_orn[0][-1]], dtype=np.float32
+            [0, 0, np.sin(self.start_orn[0][-1])] - np.sin(ang_pos)
         )
-        lin_pos_error = np.array(lin_pos - self.start_pos[0], dtype=np.float32)
+        lin_pos_error = np.array(self.start_pos[0] - lin_pos)
 
         if self.add_motors_state_to_obs:
             aux_state = super().compute_auxiliary()
@@ -207,12 +207,12 @@ class QuadXHoverEnv(QuadXBaseEnv):
         if self.termination:
             return
 
-        error_distance = np.linalg.norm(self.state[-3:])
+        error_distance = np.linalg.norm(self.state[9:12])
         error_velocity = np.linalg.norm(self.state[6:9])
-        error_orientation = np.linalg.norm(self.state[5])
+        error_orientation = np.linalg.norm(self.state[3:6])
         error_angular_velocity = np.linalg.norm(self.state[0:3])
 
-        self.reward = (
+        self.reward = 20 + (
             (-self.alpha * error_distance)
             + (-self.beta * error_velocity)
             + (-self.gamma * error_orientation)

@@ -8,18 +8,30 @@ from PyFlyt.core import Aviary
 start_pos = np.array([[0.0, 0.0, -1.0]])
 start_orn = np.array([[0.0, 0.0, 0.0]])
 
+drone_options = {
+    "noisy_motors": False,
+    "min_pwm": 0.0,
+    "max_pwm": 1.0,
+    "drone_model": "cf2x",
+}
+
 # environment setup
 env = Aviary(
+    orn_conv="NED_FRD",
     start_pos=start_pos,
     start_orn=start_orn,
-    render=True,
-    darw_local_axis=True,
     drone_type="quadx",
-    orn_conv="NED_FRD",
+    drone_options=drone_options,
+    darw_local_axis=True,
+    render=True,
 )
 
 # set to position control
-env.set_mode(7)
+env.set_mode(9)
+
+# env.set_setpoint(0, np.array([0.371, 0.371, 0.369, 0.369]))
+
+env.set_setpoint(0, np.array([1, 0, 0, 0.37]))
 
 # simulate for 1000 steps (1000/120 ~= 8 seconds)
 for i in range(1000):
