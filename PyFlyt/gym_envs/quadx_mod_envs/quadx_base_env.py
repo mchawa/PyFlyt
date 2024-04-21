@@ -25,7 +25,7 @@ class QuadXBaseEnv(gymnasium.Env):
         start_pos: np.ndarray = np.array([[0.0, 0.0, 1.0]]),
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
         noisy_motors: bool = True,
-        min_pwm: float = 0.05,
+        min_pwm: float = 0.0,
         max_pwm: float = 1.0,
         drone_model: str = "cf2x",
         simulate_wind: bool = False,
@@ -36,7 +36,7 @@ class QuadXBaseEnv(gymnasium.Env):
         add_prev_actions_to_obs: bool = False,
         add_motors_state_to_obs: bool = False,
         agent_hz: int = 120,
-        normalize_actions: bool = True,
+        normalize_actions: bool = False,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
     ):
@@ -92,13 +92,16 @@ class QuadXBaseEnv(gymnasium.Env):
             low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
         )
 
-        if flight_mode in [-1, 8, 9]:
-            if normalize_actions:
-                high = np.full((4,), 1.0, dtype=np.float32)
-                low = np.full((4,), -1.0, dtype=np.float32)
-            else:
-                high = np.full((4,), 1.0, dtype=np.float32)
-                low = np.full((4,), 0.0, dtype=np.float32)
+        if flight_mode in [-1, 8]:
+            # if normalize_actions:
+            #     low = np.full((4,), -1.0)
+            #     high = np.full((4,), 1.0)
+            # else:
+            low = np.full((4,), 0.0)
+            high = np.full((4,), 1.0)
+        elif flight_mode == 9:
+            low = np.array([-1, -1, -1, 0])
+            high = np.array([1, 1, 1, 1])
         else:
             angular_rate_limit = np.pi
             thrust_limit = 0.8
@@ -330,8 +333,8 @@ class QuadXBaseEnv(gymnasium.Env):
             state, reward, termination, truncation, info
         """
         # unsqueeze the action to be usable in aviary
-        if self.normalize_actions:
-            action = (action + 1) / 2.0
+        # if self.normalize_actions:
+        #     action = (action + 1) / 2.0
         self.action = action.copy()
 
         # reset the reward and set the action

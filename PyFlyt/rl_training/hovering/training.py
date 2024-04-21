@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument("--start_pos", type=float, nargs="+", default=[0.0, 0.0, -1.0])
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
     parser.add_argument("--noisy_motors", type=bool, default=False)
-    parser.add_argument("--min_pwm", type=float, default=0.05)
+    parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--drone_model", type=str, default="cf2x")
     parser.add_argument("--simulate_wind", type=bool, default=False)
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=15)
     parser.add_argument("--num_of_layers", type=int, default=2)
     parser.add_argument("--layer_size", type=int, default=256)
-    # parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
-    parser.add_argument("--num_of_workers", type=int, default=1)
+    parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
+    # parser.add_argument("--num_of_workers", type=int, default=1)
 
     args = parser.parse_args()
 

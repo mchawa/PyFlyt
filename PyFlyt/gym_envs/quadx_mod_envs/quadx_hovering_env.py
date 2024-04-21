@@ -33,7 +33,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
         randomize_start: bool = False,
         noisy_motors: bool = True,
-        min_pwm: float = 0.05,
+        min_pwm: float = 0.0,
         max_pwm: float = 1.0,
         drone_model: str = "cf2x",
         simulate_wind: bool = False,
@@ -46,7 +46,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
         beta: float = 0.1,
         gamma: float = 1,
         delta: float = 0.1,
-        normalize_actions: bool = True,
+        normalize_actions: bool = False,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
     ):
