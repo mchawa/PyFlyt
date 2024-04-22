@@ -32,16 +32,24 @@ if __name__ == "__main__":
 
     # Environment Args
     parser.add_argument("--orn_conv", type=str, default="NED_FRD")
+    parser.add_argument("--randomize_start", type=bool, default=True)
     parser.add_argument("--start_pos", type=float, nargs="+", default=[0.0, 0.0, -1.0])
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
-    parser.add_argument("--noisy_motors", type=bool, default=False)
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
+    parser.add_argument("--noisy_motors", type=bool, default=False)
     parser.add_argument("--drone_model", type=str, default="cf2x")
-    parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_mode", type=int, default=9)
-    parser.add_argument("--hovering_dome_size", type=float, default=10.0)
+    parser.add_argument("--simulate_wind", type=bool, default=False)
+    parser.add_argument("--flight_dome_size", type=float, default=100)
+    parser.add_argument("--max_duration_seconds", type=float, default=10.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
+    parser.add_argument("--hovering_dome_size", type=float, default=10.0)
+    parser.add_argument("--normalize_actions", type=bool, default=True)
+    parser.add_argument("--alpha", type=float, default=2)
+    parser.add_argument("--beta", type=float, default=0.1)
+    parser.add_argument("--gamma", type=float, default=2)
+    parser.add_argument("--delta", type=float, default=0.1)
 
     # Training Args
     # parser.add_argument("--num_of_steps", type=int, default=8640000)
@@ -51,8 +59,9 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=15)
     parser.add_argument("--num_of_layers", type=int, default=2)
     parser.add_argument("--layer_size", type=int, default=256)
-    parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
-    # parser.add_argument("--num_of_workers", type=int, default=1)
+    parser.add_argument("--eval_freq_multiplier", type=int, default=4)
+    # parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
+    parser.add_argument("--num_of_workers", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -69,6 +78,12 @@ if __name__ == "__main__":
 
     tensorboard_log_path = os.path.join(output_save_path, "tensorboard")
 
+    info_save_path = os.path.join(output_save_path, "info.txt")
+
+    with open(info_save_path, "w+") as f:
+        f.write("Arguments: {}\n".format(json.dumps(args.__dict__, indent=4)))
+        f.write("Start Time: {}\n".format(start_time))
+
     # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
     # net_arch = dict(vf=[256, 128, 64, 32], pi=[256, 128, 64, 32])
     # net_arch.append({"vf": [128], "pi": [64]})
@@ -82,20 +97,27 @@ if __name__ == "__main__":
 
     # Create hovering environment
     env_kwargs = {}
-    env_kwargs["render_mode"] = None
-    # env_kwargs["render_mode"] = "human"
     env_kwargs["orn_conv"] = args.orn_conv
+    env_kwargs["randomize_start"] = args.randomize_start
     env_kwargs["start_pos"] = np.array([args.start_pos])
     env_kwargs["start_orn"] = np.array([args.start_orn])
-    env_kwargs["randomize_start"] = True
-    env_kwargs["noisy_motors"] = args.noisy_motors
     env_kwargs["min_pwm"] = args.min_pwm
     env_kwargs["max_pwm"] = args.max_pwm
+    env_kwargs["noisy_motors"] = args.noisy_motors
     env_kwargs["drone_model"] = args.drone_model
-    env_kwargs["simulate_wind"] = args.simulate_wind
     env_kwargs["flight_mode"] = args.flight_mode
-    env_kwargs["hovering_dome_size"] = args.hovering_dome_size
+    env_kwargs["simulate_wind"] = args.simulate_wind
+    env_kwargs["flight_dome_size"] = args.flight_dome_size
+    env_kwargs["max_duration_seconds"] = args.max_duration_seconds
     env_kwargs["angle_representation"] = args.angle_representation
+    env_kwargs["hovering_dome_size"] = args.hovering_dome_size
+    env_kwargs["normalize_actions"] = args.normalize_actions
+    env_kwargs["alpha"] = args.alpha
+    env_kwargs["beta"] = args.beta
+    env_kwargs["gamma"] = args.gamma
+    env_kwargs["delta"] = args.delta
+    # env_kwargs["render_mode"] = None
+    env_kwargs["render_mode"] = "human"
 
     env = make_vec_env(
         env_id=QuadXHoverEnv,
@@ -118,7 +140,7 @@ if __name__ == "__main__":
     eval_callback = CustomEvalCallback(
         eval_env=eval_env,
         n_eval_episodes=5,
-        eval_freq=(4 * (args.update_each_steps) + 1),
+        eval_freq=(args.eval_freq_multiplier * (args.update_each_steps) + 1),
         log_path=output_save_path,
         best_model_save_path=output_save_path,
         render=False,
@@ -148,9 +170,6 @@ if __name__ == "__main__":
 
     end_time = datetime.datetime.now()
 
-    info_save_path = os.path.join(output_save_path, "info.txt")
     with open(info_save_path, "w+") as f:
-        f.write("Start Time: {}\n".format(start_time))
         f.write("End Time: {}\n".format(end_time))
         f.write("Total Time: {}\n".format(end_time - start_time))
-        f.write("Arguments: {}\n".format(json.dumps(args.__dict__, indent=4)))

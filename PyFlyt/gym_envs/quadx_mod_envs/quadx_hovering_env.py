@@ -28,25 +28,25 @@ class QuadXHoverEnv(QuadXBaseEnv):
 
     def __init__(
         self,
-        orn_conv: str = "ENU_FLU",
-        start_pos: np.ndarray = np.array([[0.0, 0.0, 1.0]]),
+        orn_conv: str = "NED_FRD",
+        randomize_start: bool = True,
+        start_pos: np.ndarray = np.array([[0.0, 0.0, -1.0]]),
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
-        randomize_start: bool = False,
-        noisy_motors: bool = True,
         min_pwm: float = 0.0,
         max_pwm: float = 1.0,
+        noisy_motors: bool = False,
         drone_model: str = "cf2x",
+        flight_mode: int = 9,
         simulate_wind: bool = False,
-        flight_mode: int = 0,
+        flight_dome_size: float = 100,
+        max_duration_seconds: float = 10.0,
+        angle_representation: str = "euler",
         hovering_dome_size: float = 10.0,
-        angle_representation: str = "quaternion",
-        add_prev_actions_to_obs: bool = False,
-        add_motors_state_to_obs: bool = False,
-        alpha: float = 1,
+        normalize_actions: bool = True,
+        alpha: float = 2,
         beta: float = 0.1,
-        gamma: float = 1,
+        gamma: float = 2,
         delta: float = 0.1,
-        normalize_actions: bool = False,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
     ):
@@ -66,25 +66,19 @@ class QuadXHoverEnv(QuadXBaseEnv):
             orn_conv=orn_conv,
             start_pos=start_pos,
             start_orn=start_orn,
-            noisy_motors=noisy_motors,
             min_pwm=min_pwm,
             max_pwm=max_pwm,
+            noisy_motors=noisy_motors,
             drone_model=drone_model,
-            simulate_wind=simulate_wind,
             flight_mode=flight_mode,
+            simulate_wind=simulate_wind,
+            flight_dome_size=flight_dome_size,
+            max_duration_seconds=max_duration_seconds,
             angle_representation=angle_representation,
-            add_prev_actions_to_obs=add_prev_actions_to_obs,
-            add_motors_state_to_obs=add_motors_state_to_obs,
             normalize_actions=normalize_actions,
             render_mode=render_mode,
             render_resolution=render_resolution,
         )
-
-        self.ang_pos = start_orn.astype(np.float32)
-
-        """GYMNASIUM STUFF"""
-        self.observation_space = self.combined_space
-
         """ENVIRONMENT CONSTANTS"""
         self.hovering_dome_size = hovering_dome_size
         self.randomize_start = randomize_start
@@ -103,18 +97,18 @@ class QuadXHoverEnv(QuadXBaseEnv):
             options: None
         """
         if self.randomize_start:
-            x = np.random.uniform(
-                -(self.hovering_dome_size - 1), (self.hovering_dome_size - 1)
-            )
-            y = np.random.uniform(
-                -(self.hovering_dome_size - 1), (self.hovering_dome_size - 1)
-            )
+            x = np.random.uniform(-self.flight_dome_size, self.flight_dome_size)
+            y = np.random.uniform(-self.flight_dome_size, self.flight_dome_size)
             if self.orn_conv == "ENU_FLU":
-                z = np.random.uniform(1, self.hovering_dome_size - 1)
+                z = np.random.uniform(1, self.flight_dome_size)
             elif self.orn_conv == "NED_FRD":
-                z = np.random.uniform(-1, -(self.hovering_dome_size - 1))
+                z = np.random.uniform(-1, -self.flight_dome_size)
 
-            self.start_pos = np.array([[x, y, z]], dtype=np.float32).round(3)
+            self.target_pos = np.array([[x, y, z]], dtype=np.float32).round(3)
+
+            self.start_pos = self.target_pos + np.random.uniform(
+                -0.5, 0.5, size=(1, 3)
+            ).round(3)
 
             # Initialize the orientation
             # Initalize phi randomly between -10deg and 10deg in radians
@@ -142,63 +136,24 @@ class QuadXHoverEnv(QuadXBaseEnv):
         - previous_action (vector of 4 values)
         - auxiliary information (vector of 4 values)
         """
-        ang_vel, ang_pos, lin_vel, lin_pos, quarternion = super().compute_attitude()
+        ang_vel, ang_pos, lin_vel, lin_pos, _ = super().compute_attitude()
 
-        self.ang_pos = ang_pos
+        ang_pos = np.sin(ang_pos)
 
-        ang_pos_error = np.array(
-            [0, 0, np.sin(self.start_orn[0][-1])] - np.sin(ang_pos)
-        )
-        lin_pos_error = np.array(self.start_pos[0] - lin_pos)
+        ang_pos_error = np.array([0, 0, np.sin(self.start_orn[0][-1])] - ang_pos)
+        lin_pos_error = np.array(self.target_pos[0] - lin_pos)
 
-        if self.add_motors_state_to_obs:
-            aux_state = super().compute_auxiliary()
-
-        # combine everything
-        if self.add_motors_state_to_obs and self.add_prev_actions_to_obs:
-            if self.angle_representation == 0:
-                self.state = np.array(
-                    [*ang_vel, *ang_pos, *lin_vel, *lin_pos, *self.action, *aux_state],
-                    dtype=np.float32,
-                )
-            elif self.angle_representation == 1:
-                self.state = np.array(
-                    [
-                        *ang_vel,
-                        *quarternion,
-                        *lin_vel,
-                        *lin_pos,
-                        *self.action,
-                        *aux_state,
-                    ],
-                    dtype=np.float32,
-                )
-        elif self.add_motors_state_to_obs:
-            if self.angle_representation == 0:
-                self.state = np.array(
-                    [*ang_vel, *ang_pos, *lin_vel, *lin_pos, *aux_state],
-                    dtype=np.float32,
-                )
-            elif self.angle_representation == 1:
-                self.state = np.array(
-                    [*ang_vel, *quarternion, *lin_vel, *lin_pos, *aux_state],
-                    dtype=np.float32,
-                )
-        elif self.add_prev_actions_to_obs:
-            if self.angle_representation == 0:
-                self.state = np.array(
-                    [*ang_vel, *ang_pos, *lin_vel, *lin_pos, *self.action],
-                    dtype=np.float32,
-                )
-            elif self.angle_representation == 1:
-                self.state = np.array(
-                    [*ang_vel, *quarternion, *lin_vel, *lin_pos, *self.action],
-                    dtype=np.float32,
-                )
-        else:
-            self.state = np.array(
-                [*ang_vel, *ang_pos_error, *lin_vel, *lin_pos_error], dtype=np.float32
-            ).round(3)
+        self.state = np.array(
+            [
+                *lin_pos,
+                *lin_vel,
+                *ang_pos,
+                *ang_vel,
+                *lin_pos_error,
+                *ang_pos_error,
+            ],
+            dtype=np.float32,
+        ).round(3)
 
     def compute_term_trunc_reward(self):
         """Computes the termination, truncation, and reward of the current timestep."""
@@ -207,10 +162,10 @@ class QuadXHoverEnv(QuadXBaseEnv):
         if self.termination:
             return
 
-        error_distance = np.linalg.norm(self.state[9:12])
-        error_velocity = np.linalg.norm(self.state[6:9])
-        error_orientation = np.linalg.norm(self.state[3:6])
-        error_angular_velocity = np.linalg.norm(self.state[0:3])
+        error_distance = np.linalg.norm(self.state[12:15])
+        error_velocity = np.linalg.norm(self.state[3:6])
+        error_orientation = np.linalg.norm(self.state[15:18])
+        error_angular_velocity = np.linalg.norm(self.state[6:9])
 
         self.reward = 20 + (
             (-self.alpha * error_distance)

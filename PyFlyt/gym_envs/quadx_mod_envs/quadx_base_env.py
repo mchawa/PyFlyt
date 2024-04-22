@@ -30,13 +30,11 @@ class QuadXBaseEnv(gymnasium.Env):
         drone_model: str = "cf2x",
         simulate_wind: bool = False,
         flight_mode: int = 0,
-        flight_dome_size: float = 10,
+        flight_dome_size: float = 100,
         max_duration_seconds: float = 10.0,
-        angle_representation: str = "quaternion",
-        add_prev_actions_to_obs: bool = False,
-        add_motors_state_to_obs: bool = False,
+        angle_representation: str = "euler",
         agent_hz: int = 120,
-        normalize_actions: bool = False,
+        normalize_actions: bool = True,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
     ):
@@ -72,89 +70,84 @@ class QuadXBaseEnv(gymnasium.Env):
         self.render_resolution = render_resolution
 
         """GYMNASIUM STUFF"""
-        # attitude size increases by 1 for quaternion
-        if angle_representation == "euler":
-            attitude_shape = 12
-        elif angle_representation == "quaternion":
-            attitude_shape = 13
-        else:
-            raise AssertionError(
-                f"angle_representation must be either `euler` or `quaternion`, not {angle_representation}"
-            )
+        # Observation space
+        minimum_z_distance = None
+        maximum_z_distance = None
+        if orn_conv == "ENU_FLU":
+            minimum_z_distance = 0
+            maximum_z_distance = 500
+        elif orn_conv == "NED_FRD":
+            minimum_z_distance = -500
+            maximum_z_distance = 0
 
-        self.attitude_space = spaces.Box(
-            low=np.array([-130, -130, -130, -2, -2, -2, -50, -50, -50, -20, -20, -20]),
-            high=np.array([130, 130, 130, 2, 2, 2, 50, 50, 50, 20, 20, 20]),
-            shape=(attitude_shape,),
+        self.observation_space = spaces.Box(
+            low=np.array(
+                [
+                    -500,  # Minimum X distance
+                    -500,  # Minimum Y distance
+                    minimum_z_distance,  # Minimum Z distance
+                    -50,  # Minimum X velocity
+                    -50,  # Minimum Y velocity
+                    -50,  # Minimum Z velocity
+                    -1,  # Minimum Phi angle (sin representation)
+                    -1,  # Minimum Theta angle (sin representation)
+                    -1,  # Minimum Psi angle (sin representation)
+                    -130,  # Minimum p angular velocity
+                    -130,  # Minimum q angular velocity
+                    -130,  # Minimum r angular velocity
+                    -20,  # Minimum X distance error
+                    -20,  # Minimum Y distance error
+                    -20,  # Minimum Z distance error
+                    -2,  # Minimum Phi angle error
+                    -2,  # Minimum Theta angle error
+                    -2,  # Minimum Psi angle error
+                ]
+            ),
+            high=np.array(
+                [
+                    500,  # Maximum X distance
+                    500,  # Maximum Y distance
+                    maximum_z_distance,  # Maximum Z distance
+                    50,  # Maximum X velocity
+                    50,  # Maximum Y velocity
+                    50,  # Maximum Z velocity
+                    1,  # Maximum Phi angle (sin representation)
+                    1,  # Maximum Theta angle (sin representation)
+                    1,  # Maximum Psi angle (sin representation)
+                    130,  # Maximum p angular velocity
+                    130,  # Maximum q angular velocity
+                    130,  # Maximum r angular velocity
+                    20,  # Maximum X distance error
+                    20,  # Maximum Y distance error
+                    20,  # Maximum Z distance error
+                    2,  # Maximum Phi angle error
+                    2,  # Maximum Theta angle error
+                    2,  # Maximum Psi angle error
+                ]
+            ),
             dtype=np.float32,
         )
-        self.auxiliary_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32
-        )
 
+        # Action space
         if flight_mode in [-1, 8]:
-            # if normalize_actions:
-            #     low = np.full((4,), -1.0)
-            #     high = np.full((4,), 1.0)
-            # else:
-            low = np.full((4,), 0.0)
-            high = np.full((4,), 1.0)
+            if normalize_actions:
+                low = np.array([-1, -1, -1, -1])
+                high = np.array([1, 1, 1, 1])
+            else:
+                low = np.array([0, 0, 0, 0])
+                high = np.array([1, 1, 1, 1])
         elif flight_mode == 9:
-            low = np.array([-1, -1, -1, 0])
-            high = np.array([1, 1, 1, 1])
+            if normalize_actions:
+                low = np.array([-1, -1, -1, -1])
+                high = np.array([1, 1, 1, 1])
+            else:
+                low = np.array([-1, -1, -1, 0])
+                high = np.array([1, 1, 1, 1])
         else:
-            angular_rate_limit = np.pi
-            thrust_limit = 0.8
-            high = np.array(
-                [
-                    angular_rate_limit,
-                    angular_rate_limit,
-                    angular_rate_limit,
-                    thrust_limit,
-                ],
-                dtype=np.float32,
-            )
-            low = np.array(
-                [
-                    -angular_rate_limit,
-                    -angular_rate_limit,
-                    -angular_rate_limit,
-                    0.0,
-                ],
-                dtype=np.float32,
+            raise ValueError(
+                f"Invalid flight mode {flight_mode}, only -1, 8, 9 allowed."
             )
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
-
-        if add_prev_actions_to_obs and add_motors_state_to_obs:
-            # the whole implicit state space = attitude + previous action + auxiliary information
-            self.combined_space = spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(
-                    attitude_shape
-                    + self.action_space.shape[0]
-                    + self.auxiliary_space.shape[0],
-                ),
-                dtype=np.float32,
-            )
-        elif add_motors_state_to_obs:
-            # the whole implicit state space = attitude + auxiliary information
-            self.combined_space = spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(attitude_shape + self.auxiliary_space.shape[0],),
-                dtype=np.float32,
-            )
-        elif add_prev_actions_to_obs:
-            # the whole implicit state space = attitude + previous action
-            self.combined_space = spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(attitude_shape + self.action_space.shape[0],),
-                dtype=np.float32,
-            )
-        else:
-            self.combined_space = self.attitude_space
 
         """ ENVIRONMENT CONSTANTS """
         self.orn_conv = orn_conv
@@ -173,8 +166,6 @@ class QuadXBaseEnv(gymnasium.Env):
         self.noisy_motors = noisy_motors
         self.drone_model = drone_model
         self.simulate_wind = simulate_wind
-        self.add_prev_actions_to_obs = add_prev_actions_to_obs
-        self.add_motors_state_to_obs = add_motors_state_to_obs
         self.normalize_actions = normalize_actions
 
     def close(self) -> None:
@@ -317,8 +308,8 @@ class QuadXBaseEnv(gymnasium.Env):
             self.info["collision"] = True
             self.termination |= True
 
-        # exceed flight dome
-        if np.linalg.norm(self.env.state(0)[-1]) > self.flight_dome_size:
+        # linear distance error exceeding 10m
+        if np.linalg.norm(self.state[12:15]) > 10:
             self.reward = -100
             self.info["out_of_bounds"] = True
             self.termination |= True
@@ -333,8 +324,13 @@ class QuadXBaseEnv(gymnasium.Env):
             state, reward, termination, truncation, info
         """
         # unsqueeze the action to be usable in aviary
-        # if self.normalize_actions:
-        #     action = (action + 1) / 2.0
+        if self.normalize_actions:
+            if self.flight_mode in [-1, 8]:
+                action = (action + 1) / 2.0
+            elif self.flight_mode == 9:
+                action[-1] = (action[-1] + 1) / 2.0
+            else:
+                pass
         self.action = action.copy()
 
         # reset the reward and set the action
