@@ -60,8 +60,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_of_layers", type=int, default=2)
     parser.add_argument("--layer_size", type=int, default=256)
     parser.add_argument("--eval_freq_multiplier", type=int, default=4)
-    # parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
-    parser.add_argument("--num_of_workers", type=int, default=1)
+    parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
+    # parser.add_argument("--num_of_workers", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     env_kwargs["beta"] = args.beta
     env_kwargs["gamma"] = args.gamma
     env_kwargs["delta"] = args.delta
-    # env_kwargs["render_mode"] = None
-    env_kwargs["render_mode"] = "human"
+    env_kwargs["render_mode"] = None
+    # env_kwargs["render_mode"] = "human"
 
     env = make_vec_env(
         env_id=QuadXHoverEnv,
