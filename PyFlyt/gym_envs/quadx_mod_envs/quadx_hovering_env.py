@@ -119,6 +119,8 @@ class QuadXHoverEnv(QuadXBaseEnv):
             psi = np.random.uniform(-1.5708, 4.71239)
 
             self.start_orn = np.array([[phi, theta, psi]], dtype=np.float32).round(3)
+        else:
+            self.target_pos = self.start_pos
 
         super().begin_reset(seed, options)
         super().end_reset(seed, options)
@@ -165,7 +167,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
         error_distance = np.linalg.norm(self.state[12:15])
         error_velocity = np.linalg.norm(self.state[3:6])
         error_orientation = np.linalg.norm(self.state[15:18])
-        error_angular_velocity = np.linalg.norm(self.state[6:9])
+        error_angular_velocity = np.linalg.norm(self.state[9:12])
 
         self.reward = 20 + (
             (-self.alpha * error_distance)

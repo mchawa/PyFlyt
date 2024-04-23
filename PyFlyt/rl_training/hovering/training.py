@@ -2,6 +2,7 @@ import argparse
 import datetime
 import json
 import os
+import socket
 import sys
 from pathlib import Path
 
@@ -22,6 +23,8 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
+device_name = socket.gethostname()
+
 if __name__ == "__main__":
 
     np.seterr(all="raise")
@@ -39,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=False)
     parser.add_argument("--drone_model", type=str, default="cf2x")
-    parser.add_argument("--flight_mode", type=int, default=9)
+    parser.add_argument("--flight_mode", type=int, default=8)
     parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)
@@ -53,7 +56,7 @@ if __name__ == "__main__":
 
     # Training Args
     # parser.add_argument("--num_of_steps", type=int, default=8640000)
-    parser.add_argument("--num_of_steps", type=int, default=50000000)
+    parser.add_argument("--num_of_steps", type=int, default=100000000)
     parser.add_argument("--update_each_steps", type=int, default=3840)
     parser.add_argument("--batch_size", type=int, default=120)
     parser.add_argument("--n_epochs", type=int, default=15)
@@ -81,6 +84,7 @@ if __name__ == "__main__":
     info_save_path = os.path.join(output_save_path, "info.txt")
 
     with open(info_save_path, "w+") as f:
+        f.write("Device Name: {}\n".format(device_name))
         f.write("Arguments: {}\n".format(json.dumps(args.__dict__, indent=4)))
         f.write("Start Time: {}\n".format(start_time))
 
@@ -148,7 +152,7 @@ if __name__ == "__main__":
     )
 
     # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/trained_models/PPO/2024_03_20_03_58_02/best_model_27_0_36.zip",
+    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_22_23_56_35/best_model_8_603_488_5439_5018.zip",
     #     env=env,
     #     tensorboard_log=tensorboard_log_path,
     #     print_system_info=True,
@@ -170,6 +174,6 @@ if __name__ == "__main__":
 
     end_time = datetime.datetime.now()
 
-    with open(info_save_path, "w+") as f:
+    with open(info_save_path, "a+") as f:
         f.write("End Time: {}\n".format(end_time))
         f.write("Total Time: {}\n".format(end_time - start_time))
