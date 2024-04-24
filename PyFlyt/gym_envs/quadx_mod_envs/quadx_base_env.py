@@ -34,6 +34,7 @@ class QuadXBaseEnv(gymnasium.Env):
         max_duration_seconds: float = 10.0,
         angle_representation: str = "euler",
         agent_hz: int = 120,
+        normalize_obs: bool = True,
         normalize_actions: bool = True,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
@@ -75,74 +76,86 @@ class QuadXBaseEnv(gymnasium.Env):
         maximum_z_distance = None
         if orn_conv == "ENU_FLU":
             minimum_z_distance = 0
-            maximum_z_distance = 500
+            maximum_z_distance = flight_dome_size + 20
         elif orn_conv == "NED_FRD":
-            minimum_z_distance = -500
+            minimum_z_distance = -(flight_dome_size + 20)
             maximum_z_distance = 0
 
-        self.observation_space = spaces.Box(
-            low=np.array(
-                [
-                    -500,  # Minimum X distance
-                    -500,  # Minimum Y distance
-                    minimum_z_distance,  # Minimum Z distance
-                    -50,  # Minimum X velocity
-                    -50,  # Minimum Y velocity
-                    -50,  # Minimum Z velocity
-                    -1,  # Minimum Phi angle (sin representation)
-                    -1,  # Minimum Theta angle (sin representation)
-                    -1,  # Minimum Psi angle (sin representation)
-                    -130,  # Minimum p angular velocity
-                    -130,  # Minimum q angular velocity
-                    -130,  # Minimum r angular velocity
-                    -20,  # Minimum X distance error
-                    -20,  # Minimum Y distance error
-                    -20,  # Minimum Z distance error
-                    -2,  # Minimum Phi angle error
-                    -2,  # Minimum Theta angle error
-                    -2,  # Minimum Psi angle error
-                ]
-            ),
-            high=np.array(
-                [
-                    500,  # Maximum X distance
-                    500,  # Maximum Y distance
-                    maximum_z_distance,  # Maximum Z distance
-                    50,  # Maximum X velocity
-                    50,  # Maximum Y velocity
-                    50,  # Maximum Z velocity
-                    1,  # Maximum Phi angle (sin representation)
-                    1,  # Maximum Theta angle (sin representation)
-                    1,  # Maximum Psi angle (sin representation)
-                    130,  # Maximum p angular velocity
-                    130,  # Maximum q angular velocity
-                    130,  # Maximum r angular velocity
-                    20,  # Maximum X distance error
-                    20,  # Maximum Y distance error
-                    20,  # Maximum Z distance error
-                    2,  # Maximum Phi angle error
-                    2,  # Maximum Theta angle error
-                    2,  # Maximum Psi angle error
-                ]
-            ),
-            dtype=np.float32,
+        self.obs_low = np.array(
+            [
+                -(flight_dome_size + 20),  # Minimum X distance
+                -(flight_dome_size + 20),  # Minimum Y distance
+                minimum_z_distance,  # Minimum Z distance
+                -50,  # Minimum X velocity
+                -50,  # Minimum Y velocity
+                -50,  # Minimum Z velocity
+                -1,  # Minimum Phi angle (sin representation)
+                -1,  # Minimum Theta angle (sin representation)
+                -1,  # Minimum Psi angle (sin representation)
+                -130,  # Minimum p angular velocity
+                -130,  # Minimum q angular velocity
+                -130,  # Minimum r angular velocity
+                -20,  # Minimum X distance error
+                -20,  # Minimum Y distance error
+                -20,  # Minimum Z distance error
+                -2,  # Minimum Phi angle error
+                -2,  # Minimum Theta angle error
+                -2,  # Minimum Psi angle error
+            ]
         )
+        self.obs_high = np.array(
+            [
+                (flight_dome_size + 20),  # Maximum X distance
+                (flight_dome_size + 20),  # Maximum Y distance
+                maximum_z_distance,  # Maximum Z distance
+                50,  # Maximum X velocity
+                50,  # Maximum Y velocity
+                50,  # Maximum Z velocity
+                1,  # Maximum Phi angle (sin representation)
+                1,  # Maximum Theta angle (sin representation)
+                1,  # Maximum Psi angle (sin representation)
+                130,  # Maximum p angular velocity
+                130,  # Maximum q angular velocity
+                130,  # Maximum r angular velocity
+                20,  # Maximum X distance error
+                20,  # Maximum Y distance error
+                20,  # Maximum Z distance error
+                2,  # Maximum Phi angle error
+                2,  # Maximum Theta angle error
+                2,  # Maximum Psi angle error
+            ]
+        )
+
+        if normalize_obs:
+            self.observation_space = spaces.Box(
+                low=np.full(len(self.obs_low), -1),
+                high=np.full(len(self.obs_high), 1),
+                dtype=np.float32,
+            )
+        else:
+            self.observation_space = spaces.Box(
+                low=self.obs_low, high=self.obs_high, dtype=np.float32
+            )
 
         # Action space
         if flight_mode in [-1, 8]:
+            self.action_low = np.array([0, 0, 0, 0])
+            self.action_high = np.array([1, 1, 1, 1])
             if normalize_actions:
                 low = np.array([-1, -1, -1, -1])
                 high = np.array([1, 1, 1, 1])
             else:
-                low = np.array([0, 0, 0, 0])
-                high = np.array([1, 1, 1, 1])
+                low = self.action_low
+                high = self.action_high
         elif flight_mode == 9:
+            self.action_low = np.array([-1, -1, -1, 0])
+            self.action_high = np.array([1, 1, 1, 1])
             if normalize_actions:
                 low = np.array([-1, -1, -1, -1])
                 high = np.array([1, 1, 1, 1])
             else:
-                low = np.array([-1, -1, -1, 0])
-                high = np.array([1, 1, 1, 1])
+                low = self.action_low
+                high = self.action_high
         else:
             raise ValueError(
                 f"Invalid flight mode {flight_mode}, only -1, 8, 9 allowed."
@@ -166,6 +179,7 @@ class QuadXBaseEnv(gymnasium.Env):
         self.noisy_motors = noisy_motors
         self.drone_model = drone_model
         self.simulate_wind = simulate_wind
+        self.normalize_obs = normalize_obs
         self.normalize_actions = normalize_actions
 
     def close(self) -> None:
@@ -325,12 +339,11 @@ class QuadXBaseEnv(gymnasium.Env):
         """
         # unsqueeze the action to be usable in aviary
         if self.normalize_actions:
-            if self.flight_mode in [-1, 8]:
-                action = (action + 1) / 2.0
-            elif self.flight_mode == 9:
-                action[-1] = (action[-1] + 1) / 2.0
-            else:
-                pass
+            # Unnormalize the action
+            action = (
+                ((action + 1) / 2) * (self.action_high - self.action_low)
+                + self.action_low
+            ).astype(np.float32)
         self.action = action.copy()
 
         # reset the reward and set the action
@@ -349,15 +362,25 @@ class QuadXBaseEnv(gymnasium.Env):
             self.compute_state()
             self.compute_term_trunc_reward()
 
+        # Nomralize the observation
+        state = None
+        if self.normalize_obs:
+            state = (
+                ((self.state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
+            ).astype(np.float32)
+        else:
+            state = self.state
+
+        # increment step count
+        self.step_count += 1
+
         # print(
         #     "State:\n \tLinear Error: X={}, Y={}, Z={}\nAction: {}\nReward: {}\n\n".format(
         #         self.state[-3], self.state[-2], self.state[-3], self.action, self.reward
         #     )
         # )
-        # increment step count
-        self.step_count += 1
 
-        return self.state, self.reward, self.termination, self.truncation, self.info
+        return state, self.reward, self.termination, self.truncation, self.info
 
     def render(self) -> np.ndarray:
         """render."""

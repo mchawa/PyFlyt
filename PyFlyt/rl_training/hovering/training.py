@@ -2,6 +2,7 @@ import argparse
 import datetime
 import json
 import os
+import signal
 import socket
 import sys
 from pathlib import Path
@@ -24,6 +25,20 @@ if project_dir not in sys.path:
     sys.path.append(project_dir)
 
 device_name = socket.gethostname()
+
+
+def signal_handler(sig, frame):
+    print("You pressed Ctrl+C!")
+
+    if info_save_path is not None:
+        end_time = datetime.datetime.now()
+
+        with open(info_save_path, "a+") as f:
+            f.write("End Time: {}\n".format(end_time))
+            f.write("Total Time: {}\n".format(end_time - start_time))
+
+    sys.exit(0)  # Exits the program cleanly
+
 
 if __name__ == "__main__":
 
@@ -48,6 +63,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--hovering_dome_size", type=float, default=10.0)
+    parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
     parser.add_argument("--alpha", type=float, default=2)
     parser.add_argument("--beta", type=float, default=0.1)
@@ -87,6 +103,8 @@ if __name__ == "__main__":
         f.write("Device Name: {}\n".format(device_name))
         f.write("Arguments: {}\n".format(json.dumps(args.__dict__, indent=4)))
         f.write("Start Time: {}\n".format(start_time))
+
+    signal.signal(signal.SIGINT, signal_handler)  # Register the signal handler
 
     # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
     # net_arch = dict(vf=[256, 128, 64, 32], pi=[256, 128, 64, 32])
