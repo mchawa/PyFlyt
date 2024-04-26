@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=False)
     parser.add_argument("--drone_model", type=str, default="cf2x")
-    parser.add_argument("--flight_mode", type=int, default=8)
+    parser.add_argument("--flight_mode", type=int, default=9)
     parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)
@@ -71,9 +71,10 @@ if __name__ == "__main__":
     parser.add_argument("--delta", type=float, default=0.1)
 
     # Training Args
-    # parser.add_argument("--num_of_steps", type=int, default=8640000)
-    parser.add_argument("--num_of_steps", type=int, default=100000000)
-    parser.add_argument("--update_each_steps", type=int, default=3840)
+    num_of_steps = (np.ceil(100000000 / (61440 * 4)) * (61440 * 4)) + 1
+    parser.add_argument("--num_of_steps", type=int, default=num_of_steps)
+    update_each_steps = 61440 // mp.cpu_count()
+    parser.add_argument("--update_each_steps", type=int, default=update_each_steps)
     parser.add_argument("--batch_size", type=int, default=120)
     parser.add_argument("--n_epochs", type=int, default=15)
     parser.add_argument("--num_of_layers", type=int, default=2)
