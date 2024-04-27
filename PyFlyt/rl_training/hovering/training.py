@@ -191,24 +191,24 @@ if __name__ == "__main__":
         deterministic=True,
     )
 
-    model = PPO.load(
-        path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_25_01_14_18/best_model_59_1201_0_22864_310.zip",
-        env=env,
-        tensorboard_log=tensorboard_log_path,
-        print_system_info=True,
-        verbose=1,
-    )
-
-    # model = PPO(
-    #     "MlpPolicy",
-    #     env,
-    #     batch_size=args.batch_size,
-    #     n_steps=args.update_each_steps,
-    #     n_epochs=args.n_epochs,
+    # model = PPO.load(
+    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_25_01_14_18/best_model_59_1201_0_22864_310.zip",
+    #     env=env,
     #     tensorboard_log=tensorboard_log_path,
-    #     # policy_kwargs=policy_kwargs,
+    #     print_system_info=True,
     #     verbose=1,
     # )
+
+    model = PPO(
+        "MlpPolicy",
+        env,
+        batch_size=args.batch_size,
+        n_steps=args.update_each_steps,
+        n_epochs=args.n_epochs,
+        tensorboard_log=tensorboard_log_path,
+        # policy_kwargs=policy_kwargs,
+        verbose=1,
+    )
 
     model.learn(total_timesteps=args.num_of_steps, callback=eval_callback)
 
