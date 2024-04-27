@@ -12,6 +12,7 @@ from gymnasium import spaces
 from PyFlyt.core.aviary import Aviary
 from PyFlyt.core.utils.compile_helpers import check_numpy
 from PyFlyt.core.wind.simple_wind import SimpleWindField
+from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
 
 
 class QuadXBaseEnv(gymnasium.Env):
@@ -21,6 +22,7 @@ class QuadXBaseEnv(gymnasium.Env):
 
     def __init__(
         self,
+        control_hz: int = 40,
         orn_conv: str = "ENU_FLU",
         start_pos: np.ndarray = np.array([[0.0, 0.0, 1.0]]),
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
@@ -33,11 +35,11 @@ class QuadXBaseEnv(gymnasium.Env):
         flight_dome_size: float = 100,
         max_duration_seconds: float = 10.0,
         angle_representation: str = "euler",
-        agent_hz: int = 120,
         normalize_obs: bool = True,
         normalize_actions: bool = True,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
+        logger: None | Logger = None,
     ):
         """__init__.
 
@@ -52,16 +54,17 @@ class QuadXBaseEnv(gymnasium.Env):
             flight_dome_size (float): flight_dome_size
             max_duration_seconds (float): max_duration_seconds
             angle_representation (str): angle_representation
-            agent_hz (int): agent_hz
+            control_hz (int): control_hz
             render_mode (None | str): render_mode
             render_resolution (tuple[int, int]): render_resolution
         """
-        if 120 % agent_hz != 0:
-            lowest = int(120 / (int(120 / agent_hz) + 1))
-            highest = int(120 / int(120 / agent_hz))
+        if 240 % control_hz != 0:
+            lowest = int(240 / (int(240 / control_hz) + 1))
+            highest = int(240 / int(240 / control_hz))
             raise AssertionError(
-                f"`agent_hz` must be round denominator of 120, try {lowest} or {highest}."
+                f"`control_hz` must be round denominator of 240, try {lowest} or {highest}."
             )
+        self.control_hz = control_hz
 
         if render_mode is not None:
             assert (
@@ -69,6 +72,7 @@ class QuadXBaseEnv(gymnasium.Env):
             ), f"Invalid render mode {render_mode}, only {self.metadata['render_modes']} allowed."
         self.render_mode = render_mode
         self.render_resolution = render_resolution
+        self.logger = logger
 
         """GYMNASIUM STUFF"""
         # Observation space
@@ -89,18 +93,18 @@ class QuadXBaseEnv(gymnasium.Env):
                 -50,  # Minimum X velocity
                 -50,  # Minimum Y velocity
                 -50,  # Minimum Z velocity
-                -1,  # Minimum Phi angle (sin representation)
-                -1,  # Minimum Theta angle (sin representation)
-                -1,  # Minimum Psi angle (sin representation)
+                -np.pi,  # Minimum Phi angle
+                -np.pi,  # Minimum Theta angle
+                -np.pi,  # Minimum Psi angle
                 -130,  # Minimum p angular velocity
                 -130,  # Minimum q angular velocity
                 -130,  # Minimum r angular velocity
                 -20,  # Minimum X distance error
                 -20,  # Minimum Y distance error
                 -20,  # Minimum Z distance error
-                -2,  # Minimum Phi angle error
-                -2,  # Minimum Theta angle error
-                -2,  # Minimum Psi angle error
+                -np.pi,  # Minimum Phi angle error
+                -np.pi,  # Minimum Theta angle error
+                -np.pi,  # Minimum Psi angle error
             ]
         )
         self.obs_high = np.array(
@@ -111,18 +115,18 @@ class QuadXBaseEnv(gymnasium.Env):
                 50,  # Maximum X velocity
                 50,  # Maximum Y velocity
                 50,  # Maximum Z velocity
-                1,  # Maximum Phi angle (sin representation)
-                1,  # Maximum Theta angle (sin representation)
-                1,  # Maximum Psi angle (sin representation)
+                np.pi,  # Maximum Phi angle (sin representation)
+                np.pi,  # Maximum Theta angle (sin representation)
+                np.pi,  # Maximum Psi angle (sin representation)
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
                 20,  # Maximum X distance error
                 20,  # Maximum Y distance error
                 20,  # Maximum Z distance error
-                2,  # Maximum Phi angle error
-                2,  # Maximum Theta angle error
-                2,  # Maximum Psi angle error
+                np.pi,  # Maximum Phi angle error
+                np.pi,  # Maximum Theta angle error
+                np.pi,  # Maximum Psi angle error
             ]
         )
 
@@ -156,9 +160,14 @@ class QuadXBaseEnv(gymnasium.Env):
             else:
                 low = self.action_low
                 high = self.action_high
+        elif flight_mode == 7:
+            self.action_low = np.array([-np.inf, -np.inf, -np.inf, -np.inf])
+            self.action_high = np.array([np.inf, np.inf, np.inf, np.inf])
+            low = self.action_low
+            high = self.action_high
         else:
             raise ValueError(
-                f"Invalid flight mode {flight_mode}, only -1, 8, 9 allowed."
+                f"Invalid flight mode {flight_mode}, only -1, 7, 8, 9 allowed."
             )
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
@@ -168,8 +177,7 @@ class QuadXBaseEnv(gymnasium.Env):
         self.start_orn = start_orn
         self.flight_mode = flight_mode
         self.flight_dome_size = flight_dome_size
-        self.max_steps = int(agent_hz * max_duration_seconds)
-        self.env_step_ratio = int(120 / agent_hz)
+        self.max_steps = int(control_hz * max_duration_seconds)
         if angle_representation == "euler":
             self.angle_representation = 0
         elif angle_representation == "quaternion":
@@ -234,6 +242,7 @@ class QuadXBaseEnv(gymnasium.Env):
             drone_options["min_pwm"] = self.min_pwm
             drone_options["max_pwm"] = self.max_pwm
             drone_options["drone_model"] = self.drone_model
+            drone_options["control_hz"] = self.control_hz
 
         if self.simulate_wind:
             wind_type = SimpleWindField
@@ -267,8 +276,8 @@ class QuadXBaseEnv(gymnasium.Env):
         self.env.set_mode(self.flight_mode)
 
         # wait for env to stabilize
-        for _ in range(3):
-            self.env.step()
+        # for _ in range(1):
+        #     self.env.step()
 
         self.compute_state()
 
@@ -337,6 +346,9 @@ class QuadXBaseEnv(gymnasium.Env):
         Returns:
             state, reward, termination, truncation, info
         """
+
+        old_state = self.state.copy()
+
         # unsqueeze the action to be usable in aviary
         if self.normalize_actions:
             # Unnormalize the action
@@ -350,17 +362,12 @@ class QuadXBaseEnv(gymnasium.Env):
         self.reward = 0
         self.env.set_setpoint(0, action)
 
-        # step through env, the internal env updates a few steps before the outer env
-        for _ in range(self.env_step_ratio):
-            # if we've already ended, don't continue
-            if self.termination or self.truncation:
-                break
+        # step the environment
+        self.env.step()
 
-            self.env.step()
-
-            # compute state and done
-            self.compute_state()
-            self.compute_term_trunc_reward()
+        # compute state, reward and done
+        self.compute_state()
+        self.compute_term_trunc_reward()
 
         # Nomralize the observation
         state = None
@@ -373,6 +380,29 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # increment step count
         self.step_count += 1
+
+        # log the episode
+        if self.logger is not None:
+            self.logger.add(
+                self.step_count - 1,
+                self.target_pos,
+                self.start_orn[0][-1],
+                old_state,
+                action,
+                self.reward,
+            )
+
+            if self.termination or self.truncation:
+                self.logger.add(
+                    self.step_count,
+                    self.target_pos,
+                    self.start_orn[0][-1],
+                    self.state,
+                    [0, 0, 0, 0],
+                    0,
+                )
+
+                self.logger.log_episode()
 
         # print(
         #     "State:\n \tLinear Error: X={}, Y={}, Z={}\nAction: {}\nReward: {}\n\n".format(

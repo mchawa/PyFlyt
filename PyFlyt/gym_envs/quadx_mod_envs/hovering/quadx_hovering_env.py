@@ -6,7 +6,8 @@ from typing import Any
 
 import numpy as np
 
-from PyFlyt.gym_envs.quadx_mod_envs.quadx_base_env import QuadXBaseEnv
+from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_base_env import QuadXBaseEnv
+from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
 
 
 class QuadXHoverEnv(QuadXBaseEnv):
@@ -28,8 +29,11 @@ class QuadXHoverEnv(QuadXBaseEnv):
 
     def __init__(
         self,
+        control_hz: int = 40,
         orn_conv: str = "NED_FRD",
         randomize_start: bool = True,
+        target_pos: np.ndarray = np.array([0.0, 0.0, -1.0]),
+        target_psi: float = 0.0,
         start_pos: np.ndarray = np.array([[0.0, 0.0, -1.0]]),
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
         min_pwm: float = 0.0,
@@ -46,10 +50,11 @@ class QuadXHoverEnv(QuadXBaseEnv):
         normalize_actions: bool = True,
         alpha: float = 2,
         beta: float = 0.1,
-        gamma: float = 2,
+        gamma: float = 8,
         delta: float = 0.1,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
+        logger: None | Logger = None,
     ):
         """__init__.
 
@@ -64,6 +69,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
             render_resolution (tuple[int, int]): render_resolution.
         """
         super().__init__(
+            control_hz=control_hz,
             orn_conv=orn_conv,
             start_pos=start_pos,
             start_orn=start_orn,
@@ -80,8 +86,11 @@ class QuadXHoverEnv(QuadXBaseEnv):
             normalize_actions=normalize_actions,
             render_mode=render_mode,
             render_resolution=render_resolution,
+            logger=logger,
         )
         """ENVIRONMENT CONSTANTS"""
+        self.target_pos = np.array(target_pos, dtype=np.float32).round(3)
+        self.target_orn = np.array([0.0, 0.0, target_psi], dtype=np.float32).round(3)
         self.hovering_dome_size = hovering_dome_size
         self.randomize_start = randomize_start
         self.alpha = alpha
@@ -106,10 +115,18 @@ class QuadXHoverEnv(QuadXBaseEnv):
             elif self.orn_conv == "NED_FRD":
                 z = np.random.uniform(-1, -self.flight_dome_size)
 
-            self.target_pos = np.array([[x, y, z]], dtype=np.float32).round(3)
+            self.target_pos = np.array([x, y, z], dtype=np.float32).round(3)
 
-            self.start_pos = self.target_pos + np.random.uniform(
-                -0.5, 0.5, size=(1, 3)
+            target_psi = np.random.uniform(-np.pi, np.pi)
+            self.target_orn = np.array([0.0, 0.0, target_psi], dtype=np.float32).round(
+                3
+            )
+
+            # Initialize the position
+            self.start_pos = np.array(
+                self.target_pos + np.random.uniform(-1, 1, size=(3)),
+                dtype=np.float32,
+                ndmin=2,
             ).round(3)
 
             # Initialize the orientation
@@ -117,12 +134,12 @@ class QuadXHoverEnv(QuadXBaseEnv):
             phi = np.random.uniform(-0.174533, 0.174533)
             # Initalize theta randomly between -10deg and 10deg in radians
             theta = np.random.uniform(-0.174533, 0.174533)
-            # Initalize psi randomly between -pi/2 and 3/2*pi
-            psi = np.random.uniform(-1.5708, 4.71239)
+            # Initalize psi randomly between -pi and pi
+            psi = np.random.uniform(-np.pi, np.pi)
 
-            self.start_orn = np.array([[phi, theta, psi]], dtype=np.float32).round(3)
-        else:
-            self.target_pos = self.start_pos
+            self.start_orn = np.array(
+                [phi, theta, psi], dtype=np.float32, ndmin=2
+            ).round(3)
 
         super().begin_reset(seed, options)
         super().end_reset(seed, options)
@@ -142,10 +159,12 @@ class QuadXHoverEnv(QuadXBaseEnv):
         """
         ang_vel, ang_pos, lin_vel, lin_pos, _ = super().compute_attitude()
 
-        ang_pos = np.sin(ang_pos)
+        ang_pos = (ang_pos + np.pi) % (2 * np.pi) - np.pi
 
-        ang_pos_error = np.array([0, 0, np.sin(self.start_orn[0][-1])] - ang_pos)
-        lin_pos_error = np.array(self.target_pos[0] - lin_pos)
+        ang_pos_error = (np.array(self.target_orn - ang_pos) + np.pi) % (
+            2 * np.pi
+        ) - np.pi
+        lin_pos_error = np.array(self.target_pos - lin_pos)
 
         self.state = np.array(
             [
@@ -177,7 +196,3 @@ class QuadXHoverEnv(QuadXBaseEnv):
             + (-self.gamma * error_orientation)
             + (-self.delta * error_angular_velocity)
         )
-
-        # if error_distance > self.hovering_dome_size:
-        #     self.reward = 10 * self.reward
-        #     return

@@ -471,12 +471,43 @@ class Aviary(bullet_client.BulletClient):
 
     def step(self):
         """Steps the environment, this automatically handles physics and control looprates, one step is equivalent to one control loop step."""
+        # reset collisions
+        self.contact_array &= False
+
+        # step the environment enough times for one control loop of the slowest controller
+        for step in range(self.updates_per_step):
+            # update onboard avionics conditionally
+            [
+                drone.update_control()
+                for drone in self.armed_drones
+                if step % drone.physics_control_ratio == 0
+            ]
+
+            # update physics and state
+            [drone.update_physics() for drone in self.armed_drones]
+            [drone.update_state() for drone in self.armed_drones]
+
+            # advance pybullet
+            self.stepSimulation()
+
+            # splice out collisions
+            for collision in self.getContactPoints():
+                self.contact_array[collision[1], collision[2]] = True
+                self.contact_array[collision[2], collision[1]] = True
+
+            # increment the number of physics steps
+            self.physics_steps += 1
+            self.elapsed_time = self.physics_steps / self.physics_hz
+
+        # update the last components of the drones, this is usually limited to cameras only
+        [drone.update_last() for drone in self.armed_drones]
+
         # compute rtf if we're rendering
         if self.render:
             elapsed = time.time() - self.now
             self.now = time.time()
 
-            self._sim_elapsed += self.update_period * self.updates_per_step
+            self._sim_elapsed += self.update_period
             self._frame_elapsed += elapsed
 
             time.sleep(max(self._sim_elapsed - self._frame_elapsed, 0.0))
@@ -524,8 +555,8 @@ class Aviary(bullet_client.BulletClient):
                         replaceItemUniqueId=self.local_z_line,
                     )  # Local Z-axis
 
-            # print RTF every 0.5 seconds, this actually adds considerable overhead
-            if self._frame_elapsed >= 0.5:
+            # print RTF every 1 seconds, this actually adds considerable overhead
+            if self._frame_elapsed >= 1:
                 # calculate real time factor based on realtime/simtime
                 RTF = self._sim_elapsed / (self._frame_elapsed + 1e-6)
                 self._sim_elapsed = 0.0
@@ -537,36 +568,5 @@ class Aviary(bullet_client.BulletClient):
                     textColorRGB=[1, 0, 0],
                     replaceItemUniqueId=self.rtf_debug_line,
                 )
-
-        # reset collisions
-        self.contact_array &= False
-
-        # step the environment enough times for one control loop of the slowest controller
-        for step in range(self.updates_per_step):
-            # update onboard avionics conditionally
-            [
-                drone.update_control()
-                for drone in self.armed_drones
-                if step % drone.physics_control_ratio == 0
-            ]
-
-            # update physics and state
-            [drone.update_physics() for drone in self.armed_drones]
-            [drone.update_state() for drone in self.armed_drones]
-
-            # advance pybullet
-            self.stepSimulation()
-
-            # splice out collisions
-            for collision in self.getContactPoints():
-                self.contact_array[collision[1], collision[2]] = True
-                self.contact_array[collision[2], collision[1]] = True
-
-            # increment the number of physics steps
-            self.physics_steps += 1
-            self.elapsed_time = self.physics_steps / self.physics_hz
-
-        # update the last components of the drones, this is usually limited to cameras only
-        [drone.update_last() for drone in self.armed_drones]
 
         self.aviary_steps += 1

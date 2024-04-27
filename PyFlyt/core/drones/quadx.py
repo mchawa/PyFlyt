@@ -496,7 +496,7 @@ class QuadX(DroneClass):
 
                 a_output[:2] = self.PIDs[2].step(self.state[2][:2], a_output[:2])
                 if self.orn_conv == "NED_FRD":
-                    a_output = np.array([a_output[1], -a_output[0], -a_output[2]])
+                    a_output = np.array([a_output[1], -a_output[0], a_output[2]])
                 elif self.orn_conv == "ENU_FLU":
                     a_output = np.array([-a_output[1], a_output[0], a_output[2]])
                 else:
@@ -529,14 +529,10 @@ class QuadX(DroneClass):
             elif mode in [2, 3, 4, 7]:
                 z_output = self.z_PIDs[1].step(self.state[3][-1].flatten(), z_output)
                 z_output = self.z_PIDs[0].step(self.state[2][-1].flatten(), z_output)
+
             if self.orn_conv == "NED_FRD":
-                z_output = np.clip(z_output, -1, 0)
-            elif self.orn_conv == "ENU_FLU":
-                z_output = np.clip(z_output, 0, 1)
-            else:
-                raise ValueError(
-                    f"`orn_conv` must be either 'ENU_FLU' or 'NED_FRD', got {self.orn_conv}."
-                )
+                z_output = -1 * z_output
+            z_output = np.clip(z_output, 0, 1)
 
             # mix the commands according to motor mix
             cmd = np.array([*a_output, *z_output])

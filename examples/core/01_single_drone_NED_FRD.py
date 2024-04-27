@@ -27,12 +27,13 @@ env = Aviary(
 )
 
 # set to position control
-env.set_mode(9)
+env.set_mode(7)
 
 # env.set_setpoint(0, np.array([0.371, 0.371, 0.369, 0.369]))
 
-env.set_setpoint(0, np.array([1, 0, 0, 0.37]))
+# 90 deg in rad = 1.5708
+env.set_setpoint(0, np.array([1, 1, 1.5708, -5]))
 
 # simulate for 1000 steps (1000/120 ~= 8 seconds)
-for i in range(1000):
+for i in range(2000):
     env.step()

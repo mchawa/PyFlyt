@@ -16,7 +16,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from PyFlyt.gym_envs.quadx_mod_envs.quadx_hovering_env import QuadXHoverEnv
+from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_env import QuadXHoverEnv
 from PyFlyt.rl_training.custom_eval_callback import CustomEvalCallback
 from PyFlyt.rl_training.custom_feature_extractor import CustomFeatureExtractor
 
@@ -49,8 +49,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Environment Args
+    parser.add_argument("--control_hz", type=int, default=80)
     parser.add_argument("--orn_conv", type=str, default="NED_FRD")
     parser.add_argument("--randomize_start", type=bool, default=True)
+    parser.add_argument("--target_pos", type=float, nargs="+", default=[0.0, 0.0, -1.0])
+    parser.add_argument("--target_psi", type=float, default=0.0)
     parser.add_argument("--start_pos", type=float, nargs="+", default=[0.0, 0.0, -1.0])
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
     parser.add_argument("--min_pwm", type=float, default=0.0)
@@ -67,21 +70,36 @@ if __name__ == "__main__":
     parser.add_argument("--normalize_actions", type=bool, default=True)
     parser.add_argument("--alpha", type=float, default=2)
     parser.add_argument("--beta", type=float, default=0.1)
-    parser.add_argument("--gamma", type=float, default=2)
+    parser.add_argument("--gamma", type=float, default=8)
     parser.add_argument("--delta", type=float, default=0.1)
 
     # Training Args
-    num_of_steps = (np.ceil(100000000 / (61440 * 4)) * (61440 * 4)) + 1
-    parser.add_argument("--num_of_steps", type=int, default=num_of_steps)
-    update_each_steps = 61440 // mp.cpu_count()
-    parser.add_argument("--update_each_steps", type=int, default=update_each_steps)
-    parser.add_argument("--batch_size", type=int, default=120)
-    parser.add_argument("--n_epochs", type=int, default=15)
     parser.add_argument("--num_of_layers", type=int, default=2)
     parser.add_argument("--layer_size", type=int, default=256)
+    # parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
+    parser.add_argument("--num_of_workers", type=int, default=1)
     parser.add_argument("--eval_freq_multiplier", type=int, default=4)
-    parser.add_argument("--num_of_workers", type=int, default=mp.cpu_count())
-    # parser.add_argument("--num_of_workers", type=int, default=1)
+    batch_size = parser.get_default("control_hz") * 3
+    parser.add_argument("--batch_size", type=int, default=batch_size)
+    update_each_steps = batch_size * 32
+    parser.add_argument("--update_each_steps", type=int, default=update_each_steps)
+    parser.add_argument("--n_epochs", type=int, default=15)
+    num_of_steps = (
+        np.ceil(
+            100000000
+            / (
+                update_each_steps
+                * parser.get_default("num_of_workers")
+                * parser.get_default("eval_freq_multiplier")
+            )
+        )
+        * (
+            update_each_steps
+            * parser.get_default("num_of_workers")
+            * parser.get_default("eval_freq_multiplier")
+        )
+    ) + 1
+    parser.add_argument("--num_of_steps", type=int, default=num_of_steps)
 
     args = parser.parse_args()
 
@@ -120,8 +138,11 @@ if __name__ == "__main__":
 
     # Create hovering environment
     env_kwargs = {}
+    env_kwargs["control_hz"] = args.control_hz
     env_kwargs["orn_conv"] = args.orn_conv
     env_kwargs["randomize_start"] = args.randomize_start
+    env_kwargs["target_pos"] = np.array(args.target_pos)
+    env_kwargs["target_psi"] = args.target_psi
     env_kwargs["start_pos"] = np.array([args.start_pos])
     env_kwargs["start_orn"] = np.array([args.start_orn])
     env_kwargs["min_pwm"] = args.min_pwm
@@ -140,6 +161,7 @@ if __name__ == "__main__":
     env_kwargs["gamma"] = args.gamma
     env_kwargs["delta"] = args.delta
     env_kwargs["render_mode"] = None
+    env_kwargs["logger"] = None
     # env_kwargs["render_mode"] = "human"
 
     env = make_vec_env(
@@ -170,24 +192,24 @@ if __name__ == "__main__":
         deterministic=True,
     )
 
-    # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_22_23_56_35/best_model_8_603_488_5439_5018.zip",
-    #     env=env,
-    #     tensorboard_log=tensorboard_log_path,
-    #     print_system_info=True,
-    #     verbose=1,
-    # )
-
-    model = PPO(
-        "MlpPolicy",
-        env,
-        batch_size=args.batch_size,
-        n_steps=args.update_each_steps,
-        n_epochs=args.n_epochs,
+    model = PPO.load(
+        path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_25_01_14_18/best_model_59_1201_0_22864_310.zip",
+        env=env,
         tensorboard_log=tensorboard_log_path,
-        # policy_kwargs=policy_kwargs,
+        print_system_info=True,
         verbose=1,
     )
+
+    # model = PPO(
+    #     "MlpPolicy",
+    #     env,
+    #     batch_size=args.batch_size,
+    #     n_steps=args.update_each_steps,
+    #     n_epochs=args.n_epochs,
+    #     tensorboard_log=tensorboard_log_path,
+    #     # policy_kwargs=policy_kwargs,
+    #     verbose=1,
+    # )
 
     model.learn(total_timesteps=args.num_of_steps, callback=eval_callback)
 
