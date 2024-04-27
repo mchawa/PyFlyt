@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=False)
     parser.add_argument("--drone_model", type=str, default="cf2x")
-    parser.add_argument("--flight_mode", type=int, default=9)
+    parser.add_argument("--flight_mode", type=int, default=8)
     parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)

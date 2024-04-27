@@ -9,11 +9,10 @@ start_pos = np.array([[0.0, 0.0, 1.0]])
 start_orn = np.array([[0.0, 0.0, 0.0]])
 
 drone_options = {
-    "noisy_motors": True,
+    "noisy_motors": False,
     "min_pwm": 0.0,
     "max_pwm": 1.0,
     "drone_model": "cf2x",
-    "control_hz": 240,
 }
 
 # environment setup
@@ -27,10 +26,18 @@ env = Aviary(
 )
 
 # set to position control
-env.set_mode(7)
+env.set_mode(9)
 
-env.set_setpoint(0, np.array([1, 1, 1.5708, 5]))
+# env.set_setpoint(0, np.array([1, 1, 1.5708, 5]))
+
+env.set_setpoint(0, np.array([0.1, 0, 0, 0.37]))
 
 # simulate for 1000 steps (1000/120 ~= 8 seconds)
 for i in range(1000):
+    if i == 5:
+        env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
+
+    if i == 10:
+        env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
+
     env.step()
