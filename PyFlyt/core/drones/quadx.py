@@ -555,10 +555,10 @@ class QuadX(DroneClass):
         self.motors.physics_update(self.pwm)
 
         # simulate rotational damping
-        drag_pqr = -self.drag_coef_pqr * (np.array(self.sim_state[0]) ** 2)
+        drag_pqr = -self.drag_coef_pqr * (np.array(self.state[0]) ** 2)
 
         if self.orn_conv == "NED_FRD":
-            drag_pqr = np.array([drag_pqr[1], drag_pqr[0], -drag_pqr[2]])
+            drag_pqr = np.array([drag_pqr[0], -drag_pqr[1], -drag_pqr[2]])
 
         # warning, the physics is funky for bounces
         if len(self.p.getContactPoints()) == 0:

@@ -31,18 +31,14 @@ env.set_mode(9)
 
 # env.set_setpoint(0, np.array([0.371, 0.371, 0.369, 0.369]))
 
-env.set_setpoint(0, np.array([0, 0, 0.1, 0.37]))
+env.set_setpoint(0, np.array([0.01, 0.01, 0.03, 0.37]))
 
 # simulate for 1000 steps (1000/120 ~= 8 seconds)
 for i in range(1000):
-
     if i == 5:
         env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
 
     if i == 10:
-        env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
-
-    if i == 15:
         env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
 
     env.step()
