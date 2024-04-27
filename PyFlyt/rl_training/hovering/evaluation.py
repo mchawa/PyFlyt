@@ -50,7 +50,7 @@ mean_reward_list = []
 std_reward_list = []
 
 eval_env_kwargs = {}
-eval_env_kwargs["control_hz"] = 40
+eval_env_kwargs["control_hz"] = 80
 eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
 eval_env_kwargs["target_pos"] = np.array([0, 0, -5.0])

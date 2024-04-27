@@ -25,4 +25,13 @@ class HoveringPIDExpert(PolicyPredictor):
         deterministic=False,
     ):
 
+        target_pos = observation[0][0:3] + observation[0][12:15]
+        target_psi = observation[0][8] + observation[0][17]
+        target_psi = (target_psi + np.pi) % (2 * np.pi) - np.pi
+
+        self.set_point = np.array(
+            [target_pos[0], target_pos[1], target_psi, target_pos[2]],
+            ndmin=2,
+        )
+
         return (self.set_point, state)

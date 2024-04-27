@@ -1,4 +1,5 @@
 """Basic Drone class for all drone models to inherit from."""
+
 from __future__ import annotations
 
 import os
@@ -117,7 +118,7 @@ class DroneClass(ABC):
         elif self.orn_conv == "NED_FRD":
             self.start_pos = [start_pos[1], start_pos[0], -start_pos[2]]
             self.start_orn = self.p.getQuaternionFromEuler(
-                [start_orn[0], -start_orn[1], (90 * (np.pi / 180)) - start_orn[2]]
+                [start_orn[0], -start_orn[1], (np.pi / 2) - start_orn[2]]
             )
         else:
             raise (ValueError(f"Unknown orn_conv {self.orn_conv}"))

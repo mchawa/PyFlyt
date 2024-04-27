@@ -555,7 +555,11 @@ class QuadX(DroneClass):
         self.motors.physics_update(self.pwm)
 
         # simulate rotational damping
-        drag_pqr = -self.drag_coef_pqr * (np.array(self.state[0]) ** 2)
+        drag_pqr = (
+            -np.sign(self.state[0])
+            * self.drag_coef_pqr
+            * (np.array(self.state[0]) ** 2)
+        )
 
         if self.orn_conv == "NED_FRD":
             drag_pqr = np.array([drag_pqr[0], -drag_pqr[1], -drag_pqr[2]])
@@ -585,7 +589,7 @@ class QuadX(DroneClass):
                 [
                     sim_ang_pos[0],
                     -sim_ang_pos[1],
-                    (90 * (math.pi / 180)) - sim_ang_pos[2],
+                    (np.pi / 2) - sim_ang_pos[2],
                 ]
             )
 

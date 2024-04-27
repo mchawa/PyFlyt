@@ -30,14 +30,16 @@ env.set_mode(9)
 
 # env.set_setpoint(0, np.array([1, 1, 1.5708, 5]))
 
-env.set_setpoint(0, np.array([0.01, 0.01, 0.03, 0.37]))
+env.set_setpoint(0, np.array([0.00, -0.01, 0.00, 0.37]))
 
 # simulate for 1000 steps (1000/120 ~= 8 seconds)
 for i in range(1000):
     if i == 5:
         env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
+        # print(env.drones[0].state.round(3))
 
-    if i == 10:
+    if i == 200:
         env.set_setpoint(0, np.array([0, 0, 0, 0.365]))
+        print(env.drones[0].state.round(3))
 
     env.step()
