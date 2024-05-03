@@ -11,7 +11,7 @@ from gymnasium import spaces
 
 from PyFlyt.core.aviary import Aviary
 from PyFlyt.core.utils.compile_helpers import check_numpy
-from PyFlyt.core.wind.simple_wind import SimpleWindField
+from PyFlyt.core.wind.gaussian_wind import GaussianWindField
 from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
 
 
@@ -245,9 +245,12 @@ class QuadXBaseEnv(gymnasium.Env):
             drone_options["control_hz"] = self.control_hz
 
         if self.simulate_wind:
-            wind_type = SimpleWindField
+            wind_type = GaussianWindField
+            wind_options = dict()
+            wind_options["orn_conv"] = self.orn_conv
         else:
             wind_type = None
+            wind_options = dict()
 
         # init env
         self.env = Aviary(
@@ -257,6 +260,7 @@ class QuadXBaseEnv(gymnasium.Env):
             drone_type="quadx",
             drone_options=drone_options,
             wind_type=wind_type,
+            wind_options=wind_options,
             render=self.render_mode is not None,
             darw_local_axis=(self.render_mode == "human"),
             seed=seed,
