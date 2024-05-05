@@ -31,8 +31,6 @@ class QuadXBaseEnv(gymnasium.Env):
         max_pwm: float = 1.0,
         drone_model: str = "cf2x",
         simulate_wind: bool = False,
-        base_wind_velocities: None | np.ndarray = None,
-        max_gust_strength: None | float = None,
         flight_mode: int = 0,
         flight_dome_size: float = 100,
         max_duration_seconds: float = 10.0,
@@ -82,15 +80,15 @@ class QuadXBaseEnv(gymnasium.Env):
         maximum_z_distance = None
         if orn_conv == "ENU_FLU":
             minimum_z_distance = 0
-            maximum_z_distance = flight_dome_size + 20
+            maximum_z_distance = flight_dome_size + 30
         elif orn_conv == "NED_FRD":
-            minimum_z_distance = -(flight_dome_size + 20)
+            minimum_z_distance = -(flight_dome_size + 30)
             maximum_z_distance = 0
 
         self.obs_low = np.array(
             [
-                -(flight_dome_size + 20),  # Minimum X distance
-                -(flight_dome_size + 20),  # Minimum Y distance
+                -(flight_dome_size + 30),  # Minimum X distance
+                -(flight_dome_size + 30),  # Minimum Y distance
                 minimum_z_distance,  # Minimum Z distance
                 -50,  # Minimum X velocity
                 -50,  # Minimum Y velocity
@@ -101,34 +99,30 @@ class QuadXBaseEnv(gymnasium.Env):
                 -130,  # Minimum p angular velocity
                 -130,  # Minimum q angular velocity
                 -130,  # Minimum r angular velocity
-                -20,  # Minimum X distance error
-                -20,  # Minimum Y distance error
-                -20,  # Minimum Z distance error
-                -np.pi,  # Minimum Phi angle error
-                -np.pi,  # Minimum Theta angle error
-                -np.pi,  # Minimum Psi angle error
+                -30,  # Minimum X distance error
+                -30,  # Minimum Y distance error
+                -30,  # Minimum Z distance error
+                0,  # Minimum Angle diff error
             ]
         )
         self.obs_high = np.array(
             [
-                (flight_dome_size + 20),  # Maximum X distance
-                (flight_dome_size + 20),  # Maximum Y distance
+                (flight_dome_size + 30),  # Maximum X distance
+                (flight_dome_size + 30),  # Maximum Y distance
                 maximum_z_distance,  # Maximum Z distance
                 50,  # Maximum X velocity
                 50,  # Maximum Y velocity
                 50,  # Maximum Z velocity
-                np.pi,  # Maximum Phi angle (sin representation)
-                np.pi,  # Maximum Theta angle (sin representation)
-                np.pi,  # Maximum Psi angle (sin representation)
+                np.pi,  # Maximum Phi angle
+                np.pi,  # Maximum Theta angle
+                np.pi,  # Maximum Psi angle
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
-                20,  # Maximum X distance error
-                20,  # Maximum Y distance error
-                20,  # Maximum Z distance error
-                np.pi,  # Maximum Phi angle error
-                np.pi,  # Maximum Theta angle error
-                np.pi,  # Maximum Psi angle error
+                30,  # Maximum X distance error
+                30,  # Maximum Y distance error
+                30,  # Maximum Z distance error
+                np.pi,  # Maximum Angle diff error
             ]
         )
 
@@ -138,6 +132,8 @@ class QuadXBaseEnv(gymnasium.Env):
                 high=np.full(len(self.obs_high), 1),
                 dtype=np.float32,
             )
+            # Except for minimum Angle diff error
+            self.observation_space.low[-1] = 0
         else:
             self.observation_space = spaces.Box(
                 low=self.obs_low, high=self.obs_high, dtype=np.float32
@@ -189,8 +185,6 @@ class QuadXBaseEnv(gymnasium.Env):
         self.noisy_motors = noisy_motors
         self.drone_model = drone_model
         self.simulate_wind = simulate_wind
-        self.base_wind_velocities = base_wind_velocities
-        self.max_gust_strength = max_gust_strength
         self.normalize_obs = normalize_obs
         self.normalize_actions = normalize_actions
 
@@ -252,8 +246,6 @@ class QuadXBaseEnv(gymnasium.Env):
             wind_type = GaussianWindField
             wind_options = dict()
             wind_options["orn_conv"] = self.orn_conv
-            wind_options["base_wind_velocities"] = self.base_wind_velocities
-            wind_options["max_gust_strength"] = self.max_gust_strength
         else:
             wind_type = None
             wind_options = dict()
@@ -330,6 +322,13 @@ class QuadXBaseEnv(gymnasium.Env):
 
     def compute_base_term_trunc_reward(self) -> None:
         """compute_base_term_trunc_reward."""
+
+        # target point reached
+        if np.linalg.norm(self.state[12:15]) < 0.3:
+            self.reward = 100
+            self.info["env_complete"] = True
+            self.termination |= True
+
         # exceed step count
         if self.step_count >= self.max_steps:
             self.info["TimeLimit.truncated"] = True
@@ -341,8 +340,8 @@ class QuadXBaseEnv(gymnasium.Env):
             self.info["collision"] = True
             self.termination |= True
 
-        # linear distance error exceeding 10m
-        if np.linalg.norm(self.state[12:15]) > 10:
+        # linear distance error exceeding 20m
+        if np.linalg.norm(self.state[12:15]) > 20:
             self.reward = -100
             self.info["out_of_bounds"] = True
             self.termination |= True
@@ -392,11 +391,11 @@ class QuadXBaseEnv(gymnasium.Env):
         self.step_count += 1
 
         # log the episode
-        if self.logger != None:
+        if self.logger is not None:
             self.logger.add(
                 self.step_count - 1,
                 self.target_pos,
-                self.target_orn,
+                self.start_orn[0][-1],
                 old_state,
                 action,
                 self.reward,
@@ -406,7 +405,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 self.logger.add(
                     self.step_count,
                     self.target_pos,
-                    self.target_orn,
+                    self.start_orn[0][-1],
                     self.state,
                     [0, 0, 0, 0],
                     0,

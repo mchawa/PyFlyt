@@ -13,13 +13,13 @@ class GaussianWindField(WindFieldClass):
         np_random: None | np.random.RandomState = None,
     ):
         super().__init__(np_random)
-        if base_wind_velocities == None:
+        if base_wind_velocities is None:
             self.base_wind_velocities = np.random.uniform(
                 low=[-5.0, -5.0, -1.0], high=[5.0, 5.0, 1.0], size=(3,)
             )
         else:
             self.base_wind_velocities = base_wind_velocities
-        if max_gust_strength == None:
+        if max_gust_strength is None:
             self.max_gust_strength = 7.0
         else:
             self.max_gust_strength = max_gust_strength

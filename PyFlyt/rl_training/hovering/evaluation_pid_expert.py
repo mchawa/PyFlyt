@@ -24,30 +24,37 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-model = HoveringPIDExpert(taget_pos=np.array([6.517, 6.401, -10.263]), target_psi=1.762)
+target_pos = np.array([1, 1, -5.0])
+target_psi = np.deg2rad(130)
 
-log_file_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/gym_envs/quadx_mod_envs/hovering/pid_log.csv"
+model = HoveringPIDExpert(taget_pos=target_pos, target_psi=target_psi)
+
+log_dir = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/gym_envs/quadx_mod_envs/hovering/pid_results"
 
 # Evaluate the agent
 mean_reward_list = []
 std_reward_list = []
 
 eval_env_kwargs = {}
-eval_env_kwargs["control_hz"] = 120
+eval_env_kwargs["control_hz"] = 80
 eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
-eval_env_kwargs["target_pos"] = np.array([4.678, -69.416, -80.699])
-eval_env_kwargs["target_psi"] = -1.73
-eval_env_kwargs["start_pos"] = np.array([[3.836, -69.639, -80.378]])
-eval_env_kwargs["start_orn"] = np.array([[0.126, 0.064, 2.691]])
+eval_env_kwargs["target_pos"] = target_pos
+eval_env_kwargs["target_psi"] = target_psi
+eval_env_kwargs["start_pos"] = np.array([[0, 0, -6]])
+eval_env_kwargs["start_orn"] = np.array([np.deg2rad([10, -10, 0])])
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
-eval_env_kwargs["noisy_motors"] = False
+eval_env_kwargs["noisy_motors"] = True
 eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 7
-eval_env_kwargs["simulate_wind"] = False
+eval_env_kwargs["simulate_wind"] = True
+eval_env_kwargs["base_wind_velocities"] = np.array([5.0, 5.0, 1.0])
+# eval_env_kwargs["base_wind_velocities"] = None
+eval_env_kwargs["max_gust_strength"] = 7.0
+# eval_env_kwargs["max_gust_strength"] = None
 eval_env_kwargs["flight_dome_size"] = 100
-eval_env_kwargs["max_duration_seconds"] = 10
+eval_env_kwargs["max_duration_seconds"] = 30
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["hovering_dome_size"] = 10.0
 eval_env_kwargs["normalize_actions"] = False
@@ -59,7 +66,7 @@ eval_env_kwargs["delta"] = 0.1
 eval_env_kwargs["render_mode"] = "human"
 # eval_env_kwargs["render_mode"] = None
 eval_env_kwargs["logger"] = None
-# eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
+# eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
 
 eval_env = QuadXHoverEnv(**eval_env_kwargs)
 

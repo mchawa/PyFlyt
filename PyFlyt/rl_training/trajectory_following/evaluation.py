@@ -11,8 +11,10 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 
-from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_env import QuadXHoverEnv
 from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_env import (
+    QuadXTrajectoryFollowingrEnv,
+)
 
 # from stable_baselines3.common.vec_env.VecMonitor import VecMonitor
 
@@ -31,10 +33,9 @@ if project_dir not in sys.path:
 #     "best_model_59_1201_0_22864_310.zip",
 # )
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_05_03_20_56_19/best_model_24_801_0_15251_81.zip"
-# model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_05_01_17_59_06/best_model_33_801_0_15543_125.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_05_03_05_03/best_model_13_50_8_-758_24.zip"
 
-log_dir = model_path.replace(".zip", "_results")
+log_file_path = model_path.replace(".zip", ".csv")
 
 model = PPO.load(model_path, print_system_info=True)
 
@@ -54,36 +55,30 @@ eval_env_kwargs = {}
 eval_env_kwargs["control_hz"] = 80
 eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
-eval_env_kwargs["target_pos"] = np.array([1, 1, -5.0])
-eval_env_kwargs["target_psi"] = np.deg2rad(130)
-eval_env_kwargs["start_pos"] = np.array([[0, 0, -6]])
-eval_env_kwargs["start_orn"] = np.array([np.deg2rad([10, -10, 0])])
+eval_env_kwargs["start_pos"] = np.array([[0, 0, -5]])
+eval_env_kwargs["start_orn"] = np.array([np.deg2rad([0, 0, 0])])
+eval_env_kwargs["target_pos"] = np.array([0, 10, -5])
+eval_env_kwargs["next_pos"] = np.array([0, 0, -5])
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
 eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 8
-eval_env_kwargs["simulate_wind"] = True
-eval_env_kwargs["base_wind_velocities"] = np.array([5.0, 5.0, 1.0])
-# eval_env_kwargs["base_wind_velocities"] = None
-eval_env_kwargs["max_gust_strength"] = 7.0
-# eval_env_kwargs["max_gust_strength"] = None
+eval_env_kwargs["simulate_wind"] = False
 eval_env_kwargs["flight_dome_size"] = 100
 eval_env_kwargs["max_duration_seconds"] = 10
 eval_env_kwargs["angle_representation"] = "euler"
-eval_env_kwargs["hovering_dome_size"] = 10.0
 eval_env_kwargs["normalize_actions"] = True
 eval_env_kwargs["normalize_obs"] = True
-eval_env_kwargs["alpha"] = 2
-eval_env_kwargs["beta"] = 0.1
-eval_env_kwargs["gamma"] = 8
-eval_env_kwargs["delta"] = 0.1
+eval_env_kwargs["alpha"] = 1
+eval_env_kwargs["beta"] = 1
+eval_env_kwargs["gamma"] = 0.1
 eval_env_kwargs["render_mode"] = "human"
 # eval_env_kwargs["render_mode"] = None
-# eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
-# eval_env_kwargs["logger"] = None
-#
-eval_env = QuadXHoverEnv(**eval_env_kwargs)
+# eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
+eval_env_kwargs["logger"] = None
+
+eval_env = QuadXTrajectoryFollowingrEnv(**eval_env_kwargs)
 
 eval_env = Monitor(eval_env)
 

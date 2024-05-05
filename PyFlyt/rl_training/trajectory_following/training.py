@@ -16,7 +16,9 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_env import QuadXHoverEnv
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_env import (
+    QuadXTrajectoryFollowingrEnv,
+)
 from PyFlyt.rl_training.custom_eval_callback import CustomEvalCallback
 from PyFlyt.rl_training.custom_feature_extractor import CustomFeatureExtractor
 
@@ -49,29 +51,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Environment Args
-    parser.add_argument("--control_hz", type=int, default=80)
+    parser.add_argument("--control_hz", type=int, default=120)
     parser.add_argument("--orn_conv", type=str, default="NED_FRD")
     parser.add_argument("--randomize_start", type=bool, default=True)
-    parser.add_argument("--target_pos", type=float, nargs="+", default=[0.0, 0.0, -1.0])
-    parser.add_argument("--target_psi", type=float, default=0.0)
-    parser.add_argument("--start_pos", type=float, nargs="+", default=[0.0, 0.0, -1.0])
+    parser.add_argument("--start_pos", type=float, nargs="+", default=[0.0, 0.0, -5.0])
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
+    parser.add_argument("--target_pos", type=float, nargs="+", default=[5.0, 5.0, -7.0])
+    parser.add_argument("--next_pos", type=float, nargs="+", default=[0.0, 5.0, -5.0])
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=True)
     parser.add_argument("--drone_model", type=str, default="cf2x")
     parser.add_argument("--flight_mode", type=int, default=8)
-    parser.add_argument("--simulate_wind", type=bool, default=True)
+    parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
-    parser.add_argument("--hovering_dome_size", type=float, default=10.0)
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
-    parser.add_argument("--alpha", type=float, default=2)
-    parser.add_argument("--beta", type=float, default=0.1)
-    parser.add_argument("--gamma", type=float, default=8)
-    parser.add_argument("--delta", type=float, default=0.1)
+    parser.add_argument("--alpha", type=float, default=1)
+    parser.add_argument("--beta", type=float, default=0.2)
+    parser.add_argument("--gamma", type=float, default=0.1)
 
     # Training Args
     parser.add_argument("--num_of_layers", type=int, default=2)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     output_save_path = os.path.join(
         project_dir,
         "rl_training",
-        "hovering",
+        "trajectory_following",
         "trained_models",
         output_dir_name,
     )
@@ -136,15 +136,15 @@ if __name__ == "__main__":
     #     "share_features_extractor": True,
     # }
 
-    # Create hovering environment
+    # Create trajectory following environment
     env_kwargs = {}
     env_kwargs["control_hz"] = args.control_hz
     env_kwargs["orn_conv"] = args.orn_conv
     env_kwargs["randomize_start"] = args.randomize_start
-    env_kwargs["target_pos"] = np.array(args.target_pos)
-    env_kwargs["target_psi"] = args.target_psi
     env_kwargs["start_pos"] = np.array([args.start_pos])
     env_kwargs["start_orn"] = np.array([args.start_orn])
+    env_kwargs["target_pos"] = np.array(args.target_pos)
+    env_kwargs["next_pos"] = np.array(args.next_pos)
     env_kwargs["min_pwm"] = args.min_pwm
     env_kwargs["max_pwm"] = args.max_pwm
     env_kwargs["noisy_motors"] = args.noisy_motors
@@ -154,17 +154,15 @@ if __name__ == "__main__":
     env_kwargs["flight_dome_size"] = args.flight_dome_size
     env_kwargs["max_duration_seconds"] = args.max_duration_seconds
     env_kwargs["angle_representation"] = args.angle_representation
-    env_kwargs["hovering_dome_size"] = args.hovering_dome_size
     env_kwargs["normalize_actions"] = args.normalize_actions
     env_kwargs["alpha"] = args.alpha
     env_kwargs["beta"] = args.beta
     env_kwargs["gamma"] = args.gamma
-    env_kwargs["delta"] = args.delta
     env_kwargs["render_mode"] = None
     env_kwargs["logger"] = None
 
     env = make_vec_env(
-        env_id=QuadXHoverEnv,
+        env_id=QuadXTrajectoryFollowingrEnv,
         n_envs=args.num_of_workers,
         env_kwargs=env_kwargs,
         vec_env_cls=SubprocVecEnv,
@@ -175,7 +173,7 @@ if __name__ == "__main__":
     # eval_env_kwargs["render_mode"] = "human"
 
     eval_env = make_vec_env(
-        env_id=QuadXHoverEnv,
+        env_id=QuadXTrajectoryFollowingrEnv,
         n_envs=1,
         env_kwargs=eval_env_kwargs,
         vec_env_cls=SubprocVecEnv,
