@@ -50,8 +50,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         angle_representation: str = "euler",
         normalize_obs: bool = True,
         normalize_actions: bool = True,
-        alpha: float = 1,
-        beta: float = 0.2,
+        alpha: float = 10,
+        beta: float = 1,
         gamma: float = 0.1,
         delta: float = 1,
         render_mode: None | str = None,
@@ -209,6 +209,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
             self.last_error_distance = np.linalg.norm(lin_pos_error)
 
+            self.maximum_velocity = np.random.uniform(1, 20)
+
         if np.linalg.norm(lin_vel) >= 0.01:
             self.angle_diff = np.arccos(
                 np.dot(lin_vel, self.delta_pos)
@@ -242,8 +244,10 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             np.linalg.norm(self.state[3:6]) - self.maximum_velocity, 0, None
         )
 
+        r1 = np.clip((self.last_error_distance - error_distance) * (self.control_hz / self.maximum_velocity), None, 1)
+
         self.reward = (
-            (self.alpha * (self.last_error_distance - error_distance))
+            (self.alpha * r1)
             - (self.beta * error_angle_diff)
             - (self.gamma * error_angular_velocity)
             - (self.delta * error_linear_velocity)

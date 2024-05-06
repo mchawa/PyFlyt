@@ -70,8 +70,8 @@ if __name__ == "__main__":
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
-    parser.add_argument("--alpha", type=float, default=1000)
-    parser.add_argument("--beta", type=float, default=0.2)
+    parser.add_argument("--alpha", type=float, default=10)
+    parser.add_argument("--beta", type=float, default=1)
     parser.add_argument("--gamma", type=float, default=0.1)
     parser.add_argument("--delta", type=float, default=1)
 

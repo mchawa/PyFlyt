@@ -57,8 +57,8 @@ eval_env_kwargs["max_duration_seconds"] = 10
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["normalize_actions"] = False
 eval_env_kwargs["normalize_obs"] = False
-eval_env_kwargs["alpha"] = 1000
-eval_env_kwargs["beta"] = 0.2
+eval_env_kwargs["alpha"] = 10
+eval_env_kwargs["beta"] = 1
 eval_env_kwargs["gamma"] = 0.1
 eval_env_kwargs["delta"] = 1
 # eval_env_kwargs["render_mode"] = "human"
@@ -75,7 +75,7 @@ ep_rewards, ep_lengths = evaluate_policy(
     eval_env,
     deterministic=True,
     render=(eval_env_kwargs["render_mode"] != None),
-    n_eval_episodes=5,
+    n_eval_episodes=20,
     return_episode_rewards=True,
 )
 
@@ -90,4 +90,4 @@ print("Ep Rewards: {}, Ep Lengths: {}".format(ep_rewards, ep_lengths))
 print("Mead Reward: {}, Std Reward: {}".format(mean_reward, std_reward))
 print("Mean Length: {}, Std Length: {}".format(mean_length, std_length))
 
-input("Press Enter to exit")
+# input("Press Enter to exit")
