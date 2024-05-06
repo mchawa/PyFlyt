@@ -71,11 +71,11 @@ if __name__ == "__main__":
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
-    parser.add_argument("--alpha", type=float, default=10)
+    parser.add_argument("--alpha", type=float, default=20)
     parser.add_argument("--beta", type=float, default=1)
     parser.add_argument("--gamma", type=float, default=0.1)
     parser.add_argument("--delta", type=float, default=1)
-    parser.add_argument("--epsilon", type=float, default=8)
+    parser.add_argument("--epsilon", type=float, default=2)
 
     # Training Args
     parser.add_argument("--num_of_layers", type=int, default=2)
@@ -161,6 +161,7 @@ if __name__ == "__main__":
     env_kwargs["max_duration_seconds"] = args.max_duration_seconds
     env_kwargs["angle_representation"] = args.angle_representation
     env_kwargs["normalize_actions"] = args.normalize_actions
+    env_kwargs["normalize_obs"] = args.normalize_obs
     env_kwargs["alpha"] = args.alpha
     env_kwargs["beta"] = args.beta
     env_kwargs["gamma"] = args.gamma
