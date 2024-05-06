@@ -103,6 +103,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 -30,  # Minimum Y distance error
                 -30,  # Minimum Z distance error
                 0,  # Minimum Angle diff error
+                1,  # Minimum Maximum Velocity
             ]
         )
         self.obs_high = np.array(
@@ -123,6 +124,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 30,  # Maximum Y distance error
                 30,  # Maximum Z distance error
                 np.pi,  # Maximum Angle diff error
+                20,  # Maximum Maximum Velocity
             ]
         )
 
@@ -132,8 +134,6 @@ class QuadXBaseEnv(gymnasium.Env):
                 high=np.full(len(self.obs_high), 1),
                 dtype=np.float32,
             )
-            # Except for minimum Angle diff error
-            self.observation_space.low[-1] = 0
         else:
             self.observation_space = spaces.Box(
                 low=self.obs_low, high=self.obs_high, dtype=np.float32
@@ -324,10 +324,10 @@ class QuadXBaseEnv(gymnasium.Env):
         """compute_base_term_trunc_reward."""
 
         # target point reached
-        if np.linalg.norm(self.state[12:15]) < 0.3:
-            self.reward = 100
-            self.info["env_complete"] = True
-            self.termination |= True
+        # if np.linalg.norm(self.state[12:15]) < 0.3:
+        #     self.reward = 100
+        #     self.info["env_complete"] = True
+        #     self.termination |= True
 
         # exceed step count
         if self.step_count >= self.max_steps:

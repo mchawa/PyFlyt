@@ -419,6 +419,12 @@ class QuadX(DroneClass):
         """Runs through controllers."""
         # this is the thing we cascade down controllers
         a_output = self.setpoint[:3].copy()
+        if a_output[2] is None:
+            no_yaw_control = True
+            a_output[2] = 0.0
+            a_output = a_output.astype(np.float64)
+        else:
+            no_yaw_control = False
         z_output = self.setpoint[-1].copy()
         mode = self.mode
 
@@ -535,6 +541,8 @@ class QuadX(DroneClass):
             z_output = np.clip(z_output, 0, 1)
 
             # mix the commands according to motor mix
+            if no_yaw_control:
+                a_output[2] = 0.0
             cmd = np.array([*a_output, *z_output])
             self.pwm = np.matmul(self.motor_map, cmd)
 

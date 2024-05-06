@@ -1,4 +1,5 @@
 """Handler for Waypoints in the environments."""
+
 from __future__ import annotations
 
 import math
@@ -188,3 +189,7 @@ class WaypointHandler:
     def all_targets_reached(self):
         """all_targets_reached."""
         return len(self.targets) == 0
+
+    def get_next_target(self):
+        """get_next_target."""
+        return self.targets[0]

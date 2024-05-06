@@ -58,6 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
     parser.add_argument("--target_pos", type=float, nargs="+", default=[5.0, 5.0, -7.0])
     parser.add_argument("--next_pos", type=float, nargs="+", default=[0.0, 5.0, -5.0])
+    parser.add_argument("--maximum_velocity", type=float, default=10)
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=True)
@@ -69,9 +70,10 @@ if __name__ == "__main__":
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
-    parser.add_argument("--alpha", type=float, default=1)
+    parser.add_argument("--alpha", type=float, default=1000)
     parser.add_argument("--beta", type=float, default=0.2)
     parser.add_argument("--gamma", type=float, default=0.1)
+    parser.add_argument("--delta", type=float, default=1)
 
     # Training Args
     parser.add_argument("--num_of_layers", type=int, default=2)
@@ -145,6 +147,7 @@ if __name__ == "__main__":
     env_kwargs["start_orn"] = np.array([args.start_orn])
     env_kwargs["target_pos"] = np.array(args.target_pos)
     env_kwargs["next_pos"] = np.array(args.next_pos)
+    env_kwargs["maximum_velocity"] = args.maximum_velocity
     env_kwargs["min_pwm"] = args.min_pwm
     env_kwargs["max_pwm"] = args.max_pwm
     env_kwargs["noisy_motors"] = args.noisy_motors
@@ -158,6 +161,7 @@ if __name__ == "__main__":
     env_kwargs["alpha"] = args.alpha
     env_kwargs["beta"] = args.beta
     env_kwargs["gamma"] = args.gamma
+    env_kwargs["delta"] = args.gamma
     env_kwargs["render_mode"] = None
     env_kwargs["logger"] = None
 
@@ -181,7 +185,7 @@ if __name__ == "__main__":
 
     eval_callback = CustomEvalCallback(
         eval_env=eval_env,
-        n_eval_episodes=5,
+        n_eval_episodes=10,
         eval_freq=(args.eval_freq_multiplier * (args.update_each_steps) + 1),
         log_path=output_save_path,
         best_model_save_path=output_save_path,

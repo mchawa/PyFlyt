@@ -15,6 +15,9 @@ from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
 from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_env import (
     QuadXTrajectoryFollowingrEnv,
 )
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_pid_expert import (
+    TrajectoryFollowingPIDExpert,
+)
 
 # from stable_baselines3.common.vec_env.VecMonitor import VecMonitor
 
@@ -23,29 +26,12 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-# model_path = os.path.join(
-#     project_dir,
-#     "rl_training",
-#     "hovering",
-#     "trained_models",
-#     # "Important_Models",
-#     "2024_04_25_01_14_18",
-#     "best_model_59_1201_0_22864_310.zip",
-# )
+target_pos = np.array([1, 1, -5.0])
+target_psi = np.deg2rad(130)
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_06_01_56_15/best_model_13_86_9_-1178_55.zip"
+model = TrajectoryFollowingPIDExpert(taget_pos=target_pos)
 
-log_file_path = model_path.replace(".zip", ".csv")
-
-model = PPO.load(model_path, print_system_info=True)
-
-# policy_parameters = model.get_parameters()["policy"]
-
-# for key in policy_parameters:
-#     policy_parameters[key] = policy_parameters[key].cpu().detach().numpy().tolist()
-
-# with open("data.json", "w", encoding="utf-8") as f:
-#     json.dump(policy_parameters, f, ensure_ascii=False, indent=4)
+log_dir = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/gym_envs/quadx_mod_envs/hovering/pid_results"
 
 # Evaluate the agent
 mean_reward_list = []
@@ -54,7 +40,7 @@ std_reward_list = []
 eval_env_kwargs = {}
 eval_env_kwargs["control_hz"] = 120
 eval_env_kwargs["orn_conv"] = "NED_FRD"
-eval_env_kwargs["randomize_start"] = False
+eval_env_kwargs["randomize_start"] = True
 eval_env_kwargs["start_pos"] = np.array([[0, 0, -5]])
 eval_env_kwargs["start_orn"] = np.array([np.deg2rad([0, 0, 0])])
 eval_env_kwargs["target_pos"] = np.array([2, 2, -7])
@@ -64,19 +50,19 @@ eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
 eval_env_kwargs["drone_model"] = "cf2x"
-eval_env_kwargs["flight_mode"] = 8
+eval_env_kwargs["flight_mode"] = 7
 eval_env_kwargs["simulate_wind"] = False
 eval_env_kwargs["flight_dome_size"] = 100
 eval_env_kwargs["max_duration_seconds"] = 10
 eval_env_kwargs["angle_representation"] = "euler"
-eval_env_kwargs["normalize_actions"] = True
-eval_env_kwargs["normalize_obs"] = True
+eval_env_kwargs["normalize_actions"] = False
+eval_env_kwargs["normalize_obs"] = False
 eval_env_kwargs["alpha"] = 1000
 eval_env_kwargs["beta"] = 0.2
 eval_env_kwargs["gamma"] = 0.1
 eval_env_kwargs["delta"] = 1
-eval_env_kwargs["render_mode"] = "human"
-# eval_env_kwargs["render_mode"] = None
+# eval_env_kwargs["render_mode"] = "human"
+eval_env_kwargs["render_mode"] = None
 # eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
 eval_env_kwargs["logger"] = None
 
@@ -89,7 +75,7 @@ ep_rewards, ep_lengths = evaluate_policy(
     eval_env,
     deterministic=True,
     render=(eval_env_kwargs["render_mode"] != None),
-    n_eval_episodes=1,
+    n_eval_episodes=5,
     return_episode_rewards=True,
 )
 

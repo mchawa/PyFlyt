@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 
 from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
-from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_base_env import (
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_base_env import (
     QuadXBaseEnv,
 )
 
@@ -38,6 +38,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
         target_pos: np.ndarray = np.array([0.0, 0.0, -1.0]),
         next_pos: np.ndarray = np.array([0.0, 0.0, -1.0]),
+        maximum_velocity: float = 10.0,
         min_pwm: float = 0.0,
         max_pwm: float = 1.0,
         noisy_motors: bool = False,
@@ -52,6 +53,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         alpha: float = 1,
         beta: float = 0.2,
         gamma: float = 0.1,
+        delta: float = 1,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
         logger: None | Logger = None,
@@ -92,11 +94,14 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         self.target_pos = np.array(target_pos, dtype=np.float32).round(3)
         self.next_pos = np.array(next_pos, dtype=np.float32).round(3)
         self.delta_pos = (self.next_pos - self.target_pos).round(3)
+        self.maximum_velocity = maximum_velocity
         self.randomize_start = randomize_start
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
+        self.delta = delta
         self.angle_diff = 0.0
+        self.last_error_distance = np.linalg.norm(self.target_pos - start_pos[0])
 
     def reset(
         self, *, seed: None | int = None, options: None | dict[str, Any] = dict()
@@ -108,6 +113,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             options: None
         """
         if self.randomize_start:
+            self.maximum_velocity = np.random.uniform(1, 20)
+
             # Initialize the position
             x = np.random.uniform(-self.flight_dome_size, self.flight_dome_size)
             y = np.random.uniform(-self.flight_dome_size, self.flight_dome_size)
@@ -146,6 +153,9 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             self.start_orn = np.array(
                 [phi, theta, psi], dtype=np.float32, ndmin=2
             ).round(3)
+            self.last_error_distance = np.linalg.norm(
+                self.target_pos - self.start_pos[0]
+            )
             self.angle_diff = 0.0
 
         super().begin_reset(seed, options)
@@ -170,6 +180,35 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         lin_pos_error = np.array(self.target_pos - lin_pos)
 
+        if self.state is not None:
+            self.last_error_distance = np.linalg.norm(self.state[12:15])
+
+        # target point reached
+        if np.linalg.norm(lin_pos_error) < 0.3:
+            self.target_pos = self.next_pos
+
+            next_pos_delta = np.zeros(3)
+            for i in range(3):
+                sample = np.random.uniform(-10, 10)
+                if sample < 0 and sample > -1:
+                    sample = -1
+                elif sample > 0 and sample < 1:
+                    sample = 1
+                elif sample == 0:
+                    sample = np.random.choice([-1, 1])
+                next_pos_delta[i] = sample
+            self.next_pos = (self.target_pos + next_pos_delta).round(3)
+            self.next_pos[0:1] = np.clip(
+                self.next_pos[0:1], -self.flight_dome_size, self.flight_dome_size
+            )
+            self.next_pos[2] = np.clip(self.next_pos[2], -self.flight_dome_size, -1)
+
+            self.delta_pos = (self.next_pos - self.target_pos).round(3)
+
+            lin_pos_error = np.array(self.target_pos - lin_pos)
+
+            self.last_error_distance = np.linalg.norm(lin_pos_error)
+
         if np.linalg.norm(lin_vel) >= 0.01:
             self.angle_diff = np.arccos(
                 np.dot(lin_vel, self.delta_pos)
@@ -184,6 +223,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 *ang_vel,
                 *lin_pos_error,
                 self.angle_diff,
+                self.maximum_velocity,
             ],
             dtype=np.float32,
         ).round(3)
@@ -196,11 +236,15 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             return
 
         error_distance = np.linalg.norm(self.state[12:15])
-        error_angle_diff = np.exp(-error_distance) * np.abs(self.state[15])
+        error_angle_diff = np.exp(-error_distance) * self.angle_diff
         error_angular_velocity = np.linalg.norm(self.state[9:12])
+        error_linear_velocity = np.clip(
+            np.linalg.norm(self.state[3:6]) - self.maximum_velocity, 0, None
+        )
 
         self.reward = (
-            (-self.alpha * error_distance)
+            (self.alpha * (self.last_error_distance - error_distance))
             - (self.beta * error_angle_diff)
             - (self.gamma * error_angular_velocity)
+            - (self.delta * error_linear_velocity)
         )
