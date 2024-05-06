@@ -37,6 +37,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         start_pos: np.ndarray = np.array([[0.0, 0.0, -1.0]]),
         start_orn: np.ndarray = np.array([[0.0, 0.0, 0.0]]),
         target_pos: np.ndarray = np.array([0.0, 0.0, -1.0]),
+        target_psi: float = 0.0,
         next_pos: np.ndarray = np.array([0.0, 0.0, -1.0]),
         maximum_velocity: float = 10.0,
         min_pwm: float = 0.0,
@@ -54,6 +55,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         beta: float = 1,
         gamma: float = 0.1,
         delta: float = 1,
+        epsilon: float = 8,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
         logger: None | Logger = None,
@@ -92,6 +94,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         )
         """ENVIRONMENT CONSTANTS"""
         self.target_pos = np.array(target_pos, dtype=np.float32).round(3)
+        self.target_psi = np.float32(target_psi).round(3)
         self.next_pos = np.array(next_pos, dtype=np.float32).round(3)
         self.delta_pos = (self.next_pos - self.target_pos).round(3)
         self.maximum_velocity = maximum_velocity
@@ -100,6 +103,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         self.beta = beta
         self.gamma = gamma
         self.delta = delta
+        self.epsilon = epsilon
         self.angle_diff = 0.0
         self.last_error_distance = np.linalg.norm(self.target_pos - start_pos[0])
 
@@ -141,6 +145,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             self.target_pos = (self.start_pos[0] + target_pos_delta).round(3)
             self.next_pos = (self.target_pos + next_pos_delta).round(3)
             self.delta_pos = (self.next_pos - self.target_pos).round(3)
+
+            self.target_psi = np.float32(np.random.uniform(-np.pi, np.pi)).round(3)
 
             # Initialize the orientation
             # Initalize phi randomly between -10deg and 10deg in radians
@@ -211,6 +217,10 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
             self.maximum_velocity = np.random.uniform(1, 20)
 
+            self.target_psi = np.float32(np.random.uniform(-np.pi, np.pi)).round(3)
+
+        ang_pos_error = ((self.target_psi - ang_pos[2]) + np.pi) % (2 * np.pi) - np.pi
+
         if np.linalg.norm(lin_vel) >= 0.01:
             self.angle_diff = np.arccos(
                 np.dot(lin_vel, self.delta_pos)
@@ -224,7 +234,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 *ang_pos,
                 *ang_vel,
                 *lin_pos_error,
-                self.angle_diff,
+                ang_pos_error,
+                *self.delta_pos,
                 self.maximum_velocity,
             ],
             dtype=np.float32,
@@ -237,18 +248,26 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         if self.termination:
             return
 
-        error_distance = np.linalg.norm(self.state[12:15])
-        error_angle_diff = np.exp(-error_distance) * self.angle_diff
+        error_lin_pos = np.linalg.norm(self.state[12:15])
+        error_ang_pos = np.linalg.norm(self.state[15])
+        error_angle_diff = np.exp(-error_lin_pos) * self.angle_diff
         error_angular_velocity = np.linalg.norm(self.state[9:12])
         error_linear_velocity = np.clip(
             np.linalg.norm(self.state[3:6]) - self.maximum_velocity, 0, None
         )
 
-        r1 = np.clip((self.last_error_distance - error_distance) * (self.control_hz / self.maximum_velocity), None, 1)
-
         self.reward = (
-            (self.alpha * r1)
+            (
+                self.alpha
+                * np.clip(
+                    (self.last_error_distance - error_lin_pos)
+                    * (self.control_hz / self.maximum_velocity),
+                    None,
+                    1,
+                )
+            )
             - (self.beta * error_angle_diff)
             - (self.gamma * error_angular_velocity)
             - (self.delta * error_linear_velocity)
+            - (self.epsilon * error_ang_pos)
         )

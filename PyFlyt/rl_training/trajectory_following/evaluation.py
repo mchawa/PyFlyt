@@ -33,7 +33,7 @@ if project_dir not in sys.path:
 #     "best_model_59_1201_0_22864_310.zip",
 # )
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_06_01_56_15/best_model_13_86_9_-1178_55.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_06_14_12_14/best_model_12_1201_0_2960_949.zip"
 
 log_file_path = model_path.replace(".zip", ".csv")
 
@@ -57,9 +57,10 @@ eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
 eval_env_kwargs["start_pos"] = np.array([[0, 0, -5]])
 eval_env_kwargs["start_orn"] = np.array([np.deg2rad([0, 0, 0])])
-eval_env_kwargs["target_pos"] = np.array([2, 2, -7])
-eval_env_kwargs["next_pos"] = np.array([4, 4, -5])
-eval_env_kwargs["maximum_velocity"] = 5
+eval_env_kwargs["target_pos"] = np.array([5, 5, -5])
+eval_env_kwargs["next_pos"] = np.array([-3, 7, -7])
+eval_env_kwargs["target_psi"] = np.deg2rad(0.0)
+eval_env_kwargs["maximum_velocity"] = 10
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
@@ -71,10 +72,11 @@ eval_env_kwargs["max_duration_seconds"] = 10
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["normalize_actions"] = True
 eval_env_kwargs["normalize_obs"] = True
-eval_env_kwargs["alpha"] = 1000
-eval_env_kwargs["beta"] = 0.2
+eval_env_kwargs["alpha"] = 10
+eval_env_kwargs["beta"] = 1
 eval_env_kwargs["gamma"] = 0.1
 eval_env_kwargs["delta"] = 1
+eval_env_kwargs["epsilon"] = 8
 eval_env_kwargs["render_mode"] = "human"
 # eval_env_kwargs["render_mode"] = None
 # eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
@@ -103,5 +105,3 @@ print("Evaluation Results:")
 print("Ep Rewards: {}, Ep Lengths: {}".format(ep_rewards, ep_lengths))
 print("Mead Reward: {}, Std Reward: {}".format(mean_reward, std_reward))
 print("Mean Length: {}, Std Length: {}".format(mean_length, std_length))
-
-input("Press Enter to exit")
