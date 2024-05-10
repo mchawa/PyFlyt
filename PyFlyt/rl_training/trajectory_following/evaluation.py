@@ -33,7 +33,7 @@ if project_dir not in sys.path:
 #     "best_model_59_1201_0_22864_310.zip",
 # )
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_06_14_12_14/best_model_12_1201_0_2960_949.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_07_01_26_14/best_model_23_1201_0_3659_2736.zip"
 
 log_file_path = model_path.replace(".zip", ".csv")
 
@@ -58,7 +58,7 @@ eval_env_kwargs["randomize_start"] = False
 eval_env_kwargs["start_pos"] = np.array([[0, 0, -5]])
 eval_env_kwargs["start_orn"] = np.array([np.deg2rad([0, 0, 0])])
 eval_env_kwargs["target_pos"] = np.array([5, 5, -5])
-eval_env_kwargs["next_pos"] = np.array([-3, 7, -7])
+eval_env_kwargs["next_pos"] = np.array([10, 5, -7])
 eval_env_kwargs["target_psi"] = np.deg2rad(0.0)
 eval_env_kwargs["maximum_velocity"] = 10
 eval_env_kwargs["min_pwm"] = 0.0

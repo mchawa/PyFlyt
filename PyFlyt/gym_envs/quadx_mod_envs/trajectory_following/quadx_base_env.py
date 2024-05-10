@@ -102,10 +102,10 @@ class QuadXBaseEnv(gymnasium.Env):
                 -30,  # Minimum X distance error
                 -30,  # Minimum Y distance error
                 -30,  # Minimum Z distance error
-                -np.pi,  # Minimum Psi angle error
                 -10,  # Minimum X distance delta pos
                 -10,  # Minimum Y distance delta pos
                 -10,  # Minimum Z distance delta pos
+                0,  # Minimum Angle Diff
                 1,  # Minimum Maximum Velocity
             ]
         )
@@ -126,10 +126,10 @@ class QuadXBaseEnv(gymnasium.Env):
                 30,  # Maximum X distance error
                 30,  # Maximum Y distance error
                 30,  # Maximum Z distance error
-                np.pi,  # Maximum Psi angle error
                 10,  # Maximum X distance delta pos
                 10,  # Maximum Y distance delta pos
                 10,  # Maximum Z distance delta pos
+                np.pi,  # Maximum Angle Diff
                 20,  # Maximum Maximum Velocity
             ]
         )
