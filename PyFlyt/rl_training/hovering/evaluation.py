@@ -54,17 +54,17 @@ eval_env_kwargs = {}
 eval_env_kwargs["control_hz"] = 80
 eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
-eval_env_kwargs["target_pos"] = np.array([1, 1, -5.0])
-eval_env_kwargs["target_psi"] = np.deg2rad(130)
-eval_env_kwargs["start_pos"] = np.array([[0, 0, -6]])
-eval_env_kwargs["start_orn"] = np.array([np.deg2rad([10, -10, 0])])
+eval_env_kwargs["target_pos"] = np.array([0, 0, -10.0])
+eval_env_kwargs["target_psi"] = np.deg2rad(45)
+eval_env_kwargs["start_pos"] = np.array([[0.5, -0.5, -10.5]])
+eval_env_kwargs["start_orn"] = np.array([np.deg2rad([5, -5, 0])])
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
 eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 8
 eval_env_kwargs["simulate_wind"] = True
-eval_env_kwargs["base_wind_velocities"] = np.array([5.0, 5.0, 1.0])
+eval_env_kwargs["base_wind_velocities"] = np.array([-2.0, 2.0, 0.5])
 # eval_env_kwargs["base_wind_velocities"] = None
 eval_env_kwargs["max_gust_strength"] = 7.0
 # eval_env_kwargs["max_gust_strength"] = None
@@ -78,9 +78,9 @@ eval_env_kwargs["alpha"] = 2
 eval_env_kwargs["beta"] = 0.1
 eval_env_kwargs["gamma"] = 8
 eval_env_kwargs["delta"] = 0.1
-eval_env_kwargs["render_mode"] = "human"
-# eval_env_kwargs["render_mode"] = None
-# eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
+# eval_env_kwargs["render_mode"] = "human"
+eval_env_kwargs["render_mode"] = None
+eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
 # eval_env_kwargs["logger"] = None
 #
 eval_env = QuadXHoverEnv(**eval_env_kwargs)
@@ -106,5 +106,3 @@ print("Evaluation Results:")
 print("Ep Rewards: {}, Ep Lengths: {}".format(ep_rewards, ep_lengths))
 print("Mead Reward: {}, Std Reward: {}".format(mean_reward, std_reward))
 print("Mean Length: {}, Std Length: {}".format(mean_length, std_length))
-
-input("Press Enter to exit")

@@ -106,7 +106,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 -10,  # Minimum Y distance delta pos
                 -10,  # Minimum Z distance delta pos
                 0,  # Minimum Angle Diff
-                1,  # Minimum Maximum Velocity
+                # 1,  # Minimum Maximum Velocity
             ]
         )
         self.obs_high = np.array(
@@ -130,7 +130,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 10,  # Maximum Y distance delta pos
                 10,  # Maximum Z distance delta pos
                 np.pi,  # Maximum Angle Diff
-                20,  # Maximum Maximum Velocity
+                # 20,  # Maximum Maximum Velocity
             ]
         )
 
@@ -181,6 +181,7 @@ class QuadXBaseEnv(gymnasium.Env):
         self.start_orn = start_orn
         self.flight_mode = flight_mode
         self.flight_dome_size = flight_dome_size
+        self.max_duration_seconds = max_duration_seconds
         self.max_steps = int(control_hz * max_duration_seconds)
         if angle_representation == "euler":
             self.angle_representation = 0
@@ -329,11 +330,9 @@ class QuadXBaseEnv(gymnasium.Env):
     def compute_base_term_trunc_reward(self) -> None:
         """compute_base_term_trunc_reward."""
 
-        # target point reached
-        # if np.linalg.norm(self.state[12:15]) < 0.3:
-        #     self.reward = 100
-        #     self.info["env_complete"] = True
-        #     self.termination |= True
+        if self.num_targets_reached == self.num_of_targets:
+            self.info["env_complete"] = True
+            self.termination |= True
 
         # exceed step count
         if self.step_count >= self.max_steps:
@@ -400,8 +399,6 @@ class QuadXBaseEnv(gymnasium.Env):
         if self.logger is not None:
             self.logger.add(
                 self.step_count - 1,
-                self.target_pos,
-                self.start_orn[0][-1],
                 old_state,
                 action,
                 self.reward,
@@ -410,8 +407,6 @@ class QuadXBaseEnv(gymnasium.Env):
             if self.termination or self.truncation:
                 self.logger.add(
                     self.step_count,
-                    self.target_pos,
-                    self.start_orn[0][-1],
                     self.state,
                     [0, 0, 0, 0],
                     0,

@@ -7,7 +7,7 @@ from PyFlyt.core import Aviary
 from PyFlyt.gym_envs.utils.waypoint_handler import WaypointHandler
 
 # the starting position and orientations
-start_pos = np.array([[0.0, 0.0, 1.0]])
+start_pos = np.array([[5.0, 0.0, -5.0]])
 start_orn = np.array([[0.0, 0.0, 0.0]])
 
 drone_options = {
@@ -17,6 +17,21 @@ drone_options = {
     "drone_model": "cf2x",
 }
 
+waypoints = np.array(
+    [
+        [4.05, 2.94, -6.0],
+        [1.55, 4.76, -7.0],
+        [-1.55, 4.76, -8.0],
+        [-4.05, 2.94, -9.0],
+        [-5.0, 0.0, -10.0],
+        [-4.05, -2.94, -9.0],
+        [-1.55, -4.76, -8.0],
+        [1.55, -4.76, -7.0],
+        [4.05, -2.94, -6.0],
+        [5.0, 0.0, -5.0],
+    ]
+)
+
 waypointHandler = WaypointHandler(
     enable_render=True,
     num_targets=5,
@@ -25,11 +40,12 @@ waypointHandler = WaypointHandler(
     goal_reach_angle=0.1,
     flight_dome_size=10.0,
     np_random=np.random.default_rng(),
+    waypoints=waypoints,
 )
 
 # environment setup
 env = Aviary(
-    orn_conv="ENU_FLU",
+    orn_conv="NED_FRD",
     start_pos=start_pos,
     start_orn=start_orn,
     drone_type="quadx",
@@ -63,7 +79,9 @@ while True:
             break
 
         next_point = waypointHandler.get_next_target()
-        env.set_setpoint(0, np.array([next_point[0], next_point[1], 0, next_point[2]]))
+        env.set_setpoint(
+            0, np.array([next_point[0], next_point[1], None, next_point[2]])
+        )
 
     env.step()
 

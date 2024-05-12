@@ -28,7 +28,7 @@ class TrajectoryFollowingPIDExpert(PolicyPredictor):
         target_pos = observation[0][0:3] + observation[0][12:15]
 
         self.set_point = np.array(
-            [target_pos[0], target_pos[1], None, target_pos[2]],
+            [target_pos[0], target_pos[1], self.target_psi, target_pos[2]],
             ndmin=2,
         )
 

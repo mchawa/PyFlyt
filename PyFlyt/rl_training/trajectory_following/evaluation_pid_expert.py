@@ -36,14 +36,29 @@ log_dir = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/gym_envs/quadx_mod_envs/hov
 mean_reward_list = []
 std_reward_list = []
 
+waypoints = np.array(
+    [
+        [4.05, 2.94, -6.0],
+        [1.55, 4.76, -7.0],
+        [-1.55, 4.76, -8.0],
+        [-4.05, 2.94, -9.0],
+        [-5.0, 0.0, -10.0],
+        [-4.05, -2.94, -9.0],
+        [-1.55, -4.76, -8.0],
+        [1.55, -4.76, -7.0],
+        [4.05, -2.94, -6.0],
+        [5.0, 0.0, -5.0],
+    ]
+)
+
 eval_env_kwargs = {}
-eval_env_kwargs["control_hz"] = 120
+eval_env_kwargs["control_hz"] = 80
 eval_env_kwargs["orn_conv"] = "NED_FRD"
-eval_env_kwargs["randomize_start"] = True
-eval_env_kwargs["start_pos"] = np.array([[0, 0, -5]])
+eval_env_kwargs["randomize_start"] = False
+eval_env_kwargs["start_pos"] = np.array([[5, 0, -5]])
 eval_env_kwargs["start_orn"] = np.array([np.deg2rad([0, 0, 0])])
-eval_env_kwargs["target_pos"] = np.array([5, 5, -7])
-eval_env_kwargs["next_pos"] = np.array([2, 2, -5])
+eval_env_kwargs["random_trajectory"] = False
+eval_env_kwargs["waypoints"] = waypoints
 eval_env_kwargs["maximum_velocity"] = 5
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
@@ -56,10 +71,11 @@ eval_env_kwargs["max_duration_seconds"] = 10
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["normalize_actions"] = False
 eval_env_kwargs["normalize_obs"] = False
-eval_env_kwargs["alpha"] = 10
+eval_env_kwargs["alpha"] = 1
 eval_env_kwargs["beta"] = 1
-eval_env_kwargs["gamma"] = 0.1
-eval_env_kwargs["delta"] = 0
+eval_env_kwargs["gamma"] = 0.2
+eval_env_kwargs["delta"] = 1
+eval_env_kwargs["draw_waypoints"] = True
 # eval_env_kwargs["render_mode"] = "human"
 eval_env_kwargs["render_mode"] = None
 # eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
@@ -74,7 +90,7 @@ ep_rewards, ep_lengths = evaluate_policy(
     eval_env,
     deterministic=True,
     render=(eval_env_kwargs["render_mode"] != None),
-    n_eval_episodes=20,
+    n_eval_episodes=10,
     return_episode_rewards=True,
 )
 
@@ -88,5 +104,3 @@ print("Evaluation Results:")
 print("Ep Rewards: {}, Ep Lengths: {}".format(ep_rewards, ep_lengths))
 print("Mead Reward: {}, Std Reward: {}".format(mean_reward, std_reward))
 print("Mean Length: {}, Std Length: {}".format(mean_length, std_length))
-
-# input("Press Enter to exit")
