@@ -266,7 +266,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
             # Update the remaining trajectory distance
             rem_traj_distance = 0.0
-            for i in range(self.num_targets_reached + 1, len(self.waypoints) - 2):
+            for i in range(self.num_targets_reached + 1, self.num_of_targets - 1):
                 rem_traj_distance += np.linalg.norm(
                     self.waypoints[i + 1] - self.waypoints[i]
                 )
