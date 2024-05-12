@@ -144,7 +144,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         super().begin_reset(seed, options)
 
         if self.random_trajectory:
-            self.num_of_targets = self.max_duration_seconds * 2
+            self.num_of_targets = int(self.max_duration_seconds * 2)
 
             waypoints = np.zeros((self.num_of_targets, 3))
 
@@ -164,13 +164,16 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
                 new_waypoint = base_point + samples
 
-                if abs(new_waypoint[0]) > self.flight_dome_size:
+                if np.abs(new_waypoint[0]) > self.flight_dome_size:
                     new_waypoint[0] = base_point[0] - samples[0]
 
-                if abs(new_waypoint[1]) > self.flight_dome_size:
+                if np.abs(new_waypoint[1]) > self.flight_dome_size:
                     new_waypoint[1] = base_point[1] - samples[1]
 
-                if abs(new_waypoint[2]) > self.flight_dome_size or new_waypoint[2] > -1:
+                if (
+                    np.abs(new_waypoint[2]) > self.flight_dome_size
+                    or new_waypoint[2] > -1
+                ):
                     new_waypoint[2] = base_point[2] - samples[2]
 
                 waypoints[i] = new_waypoint
