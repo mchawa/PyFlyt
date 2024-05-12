@@ -64,7 +64,7 @@ if __name__ == "__main__":
         default=[[5.0, 5.0, -7.0], [5.0, -5.0, -7.0], [5.0, 5.0, -7.0]],
     )
     parser.add_argument("--maximum_velocity", type=float, default=10)
-    parser.add_argmuent("--goal_reach_distance", type=float, default=0.3)
+    parser.add_argument("--goal_reach_distance", type=float, default=0.3)
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=True)
