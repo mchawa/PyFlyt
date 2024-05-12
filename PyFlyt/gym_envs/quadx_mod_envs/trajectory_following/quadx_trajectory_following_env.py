@@ -265,12 +265,13 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             lin_pos_error = np.array(self.target_pos - lin_pos)
 
             # Update the remaining trajectory distance
-            rem_traj_distance = 0.0
-            for i in range(self.num_targets_reached + 1, self.num_of_targets - 1):
-                rem_traj_distance += np.linalg.norm(
-                    self.waypoints[i + 1] - self.waypoints[i]
+            if self.num_targets_reached < self.num_of_targets - 1:
+                self.rem_traj_distance -= np.linalg.norm(
+                    self.waypoints[self.num_targets_reached + 1]
+                    - self.waypoints[self.num_targets_reached]
                 )
-            self.rem_traj_distance = rem_traj_distance
+            else:
+                self.rem_traj_distance = 0.0
 
             if self.draw_waypoints:
                 self.env.removeBody(self.target_visual[0])
