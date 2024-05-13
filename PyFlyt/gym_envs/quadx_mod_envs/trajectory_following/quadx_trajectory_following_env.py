@@ -144,7 +144,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         super().begin_reset(seed, options)
 
         if self.random_trajectory:
-            self.num_of_targets = int(self.max_duration_seconds * 2)
+            self.num_of_targets = int(np.clip(np.ceil(self.max_duration_seconds * 0.25), 2, None))
 
             waypoints = np.zeros((self.num_of_targets, 3))
 
@@ -190,6 +190,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             )
 
         self.total_traj_distance = total_traj_distance
+        print(self.total_traj_distance)
         self.rem_traj_distance = self.total_traj_distance - np.linalg.norm(
             self.waypoints[1] - self.waypoints[0]
         )
@@ -247,6 +248,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         if np.linalg.norm(lin_pos_error) < self.goal_reach_distance:
             if self.num_targets_reached < self.num_of_targets:
                 self.num_targets_reached += 1
+                print(self.num_targets_reached)
 
             target_pos_index = self.num_targets_reached
             if self.num_targets_reached >= self.num_of_targets:
