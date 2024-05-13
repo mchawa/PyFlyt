@@ -99,12 +99,12 @@ class QuadXBaseEnv(gymnasium.Env):
                 -130,  # Minimum p angular velocity
                 -130,  # Minimum q angular velocity
                 -130,  # Minimum r angular velocity
-                -30,  # Minimum X distance error
-                -30,  # Minimum Y distance error
-                -30,  # Minimum Z distance error
-                -10,  # Minimum X distance delta pos
-                -10,  # Minimum Y distance delta pos
-                -10,  # Minimum Z distance delta pos
+                -(flight_dome_size + 30),  # Minimum X distance target_pos
+                -(flight_dome_size + 30),  # Minimum Y distance target_pos
+                minimum_z_distance,  # Minimum Z distance target_pos
+                -(flight_dome_size + 30),  # Minimum X distance next_pos
+                -(flight_dome_size + 30),  # Minimum Y distance next_pos
+                minimum_z_distance,  # Minimum Z distance next_pos
                 0,  # Minimum Angle Diff
                 # 1,  # Minimum Maximum Velocity
             ]
@@ -123,12 +123,12 @@ class QuadXBaseEnv(gymnasium.Env):
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
-                30,  # Maximum X distance error
-                30,  # Maximum Y distance error
-                30,  # Maximum Z distance error
-                10,  # Maximum X distance delta pos
-                10,  # Maximum Y distance delta pos
-                10,  # Maximum Z distance delta pos
+                (flight_dome_size + 30),  # Maximum X distance target_pos
+                (flight_dome_size + 30),  # Maximum Y distance target_pos
+                maximum_z_distance,  # Maximum Z distance target_pos
+                (flight_dome_size + 30),  # Maximum X distance next_pos
+                (flight_dome_size + 30),  # Maximum Y distance next_pos
+                maximum_z_distance,  # Maximum Z distance next_pos
                 np.pi,  # Maximum Angle Diff
                 # 20,  # Maximum Maximum Velocity
             ]
@@ -346,7 +346,7 @@ class QuadXBaseEnv(gymnasium.Env):
             self.termination |= True
 
         # linear distance error exceeding 20m
-        if np.linalg.norm(self.state[12:15]) > 20:
+        if np.linalg.norm(self.lin_pos_error) > 20:
             self.reward = -100
             self.info["out_of_bounds"] = True
             self.termination |= True

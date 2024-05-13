@@ -52,7 +52,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         angle_representation: str = "euler",
         normalize_obs: bool = True,
         normalize_actions: bool = True,
-        alpha: float = 1,
+        alpha: float = 15,
         beta: float = 1,
         gamma: float = 0.2,
         delta: float = 1,
@@ -222,6 +222,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         self.target_pos = self.waypoints[0]
         self.next_pos = self.waypoints[1]
         self.delta_pos = self.next_pos - self.target_pos
+        self.lin_pos_error = self.target_pos - self.start_pos[0]
         self.angle_diff = 0.0
 
         super().end_reset(seed, options)
@@ -243,10 +244,10 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         ang_pos = (ang_pos + np.pi) % (2 * np.pi) - np.pi
 
-        lin_pos_error = np.array(self.target_pos - lin_pos)
+        self.lin_pos_error = np.array(self.target_pos - lin_pos)
 
         # target point reached
-        if np.linalg.norm(lin_pos_error) < self.goal_reach_distance:
+        if np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance:
             if self.num_targets_reached < self.num_of_targets:
                 self.num_targets_reached += 1
 
@@ -264,7 +265,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
             self.delta_pos = self.next_pos - self.target_pos
 
-            lin_pos_error = np.array(self.target_pos - lin_pos)
+            self.lin_pos_error = np.array(self.target_pos - lin_pos)
 
             # Update the remaining trajectory distance
             if self.num_targets_reached < self.num_of_targets - 1:
@@ -302,8 +303,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 *lin_vel,
                 *ang_pos,
                 *ang_vel,
-                *lin_pos_error,
-                *self.delta_pos,
+                *self.target_pos,
+                *self.next_pos,
                 self.angle_diff,
                 # self.maximum_velocity,
             ],
@@ -317,7 +318,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         if self.termination:
             return
 
-        error_lin_pos = np.linalg.norm(self.state[12:15])
+        error_lin_pos = np.linalg.norm(self.lin_pos_error)
         # error_angle_diff = np.exp(-error_lin_pos) * self.angle_diff
         error_angular_velocity = np.linalg.norm(self.state[9:12])
         # error_linear_velocity = np.clip(
@@ -351,7 +352,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         #             1,
         #         )
         #     )
-        #     - (self.beta * error_angle_diff)
-        #     - (self.gamma * error_angular_velocity)
-        #     - (self.delta * error_linear_velocity)
+        # - (self.beta * error_angle_diff)
+        # - (self.gamma * error_angular_velocity)
+        # - (self.delta * error_linear_velocity)
         # )
