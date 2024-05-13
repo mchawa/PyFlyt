@@ -323,11 +323,21 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         # )
 
         self.reward = (
-            self.total_traj_distance
-            - (self.alpha * (error_lin_pos + self.rem_traj_distance))
+            20
+            - (
+                self.alpha
+                * ((error_lin_pos + self.rem_traj_distance) / self.total_traj_distance)
+            )
             - (self.gamma * error_angular_velocity)
             # - (self.delta * error_linear_velocity)
         )
+
+        # self.reward = (
+        #     self.total_traj_distance
+        #     - (self.alpha * (error_lin_pos + self.rem_traj_distance))
+        #     - (self.gamma * error_angular_velocity)
+        #     # - (self.delta * error_linear_velocity)
+        # )
 
         # self.reward = (
         #     (
