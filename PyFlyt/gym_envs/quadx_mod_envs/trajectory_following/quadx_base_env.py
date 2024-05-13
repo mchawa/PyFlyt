@@ -332,7 +332,7 @@ class QuadXBaseEnv(gymnasium.Env):
 
         if self.num_targets_reached == self.num_of_targets:
             self.info["env_complete"] = True
-            self.termination |= True
+            self.truncation |= True
 
         # exceed step count
         if self.step_count >= self.max_steps:

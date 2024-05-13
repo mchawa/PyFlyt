@@ -144,7 +144,9 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         super().begin_reset(seed, options)
 
         if self.random_trajectory:
-            self.num_of_targets = int(np.clip(np.ceil(self.max_duration_seconds * 0.25), 2, None))
+            self.num_of_targets = int(
+                np.clip(np.ceil(self.max_duration_seconds * 0.5), 2, None)
+            )
 
             waypoints = np.zeros((self.num_of_targets, 3))
 

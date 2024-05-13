@@ -22,7 +22,7 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_12_02_57_30/best_model_16_801_0_6344_503.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_13_04_25_22/best_model_18_1601_0_14298_2261.zip"
 
 log_file_path = model_path.replace(".zip", ".csv")
 
@@ -71,19 +71,19 @@ eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 8
 eval_env_kwargs["simulate_wind"] = False
 eval_env_kwargs["flight_dome_size"] = 100
-eval_env_kwargs["max_duration_seconds"] = 10
+eval_env_kwargs["max_duration_seconds"] = 20
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["normalize_actions"] = True
 eval_env_kwargs["normalize_obs"] = True
-eval_env_kwargs["alpha"] = 1
+eval_env_kwargs["alpha"] = 15
 eval_env_kwargs["beta"] = 1
 eval_env_kwargs["gamma"] = 0.2
 eval_env_kwargs["delta"] = 1
 eval_env_kwargs["draw_waypoints"] = True
-eval_env_kwargs["render_mode"] = "human"
-# eval_env_kwargs["render_mode"] = None
-eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
-# eval_env_kwargs["logger"] = None
+# eval_env_kwargs["render_mode"] = "human"
+eval_env_kwargs["render_mode"] = None
+# eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
+eval_env_kwargs["logger"] = None
 
 eval_env = QuadXTrajectoryFollowingrEnv(**eval_env_kwargs)
 
@@ -94,7 +94,7 @@ ep_rewards, ep_lengths = evaluate_policy(
     eval_env,
     deterministic=True,
     render=(eval_env_kwargs["render_mode"] != None),
-    n_eval_episodes=1,
+    n_eval_episodes=10,
     return_episode_rewards=True,
 )
 
