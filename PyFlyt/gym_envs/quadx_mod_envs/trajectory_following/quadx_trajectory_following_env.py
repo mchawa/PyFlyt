@@ -185,16 +185,16 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         else:
             self.num_of_targets = self.waypoints.shape[0]
 
-        total_traj_distance = 0.0
-        for i in range(self.num_of_targets - 1):
-            total_traj_distance += np.linalg.norm(
-                self.waypoints[i + 1] - self.waypoints[i]
-            )
+        # total_traj_distance = 0.0
+        # for i in range(self.num_of_targets - 1):
+        #     total_traj_distance += np.linalg.norm(
+        #         self.waypoints[i + 1] - self.waypoints[i]
+        #     )
 
-        self.total_traj_distance = total_traj_distance
-        self.rem_traj_distance = self.total_traj_distance - np.linalg.norm(
-            self.waypoints[1] - self.waypoints[0]
-        )
+        # self.total_traj_distance = total_traj_distance
+        # self.rem_traj_distance = self.total_traj_distance - np.linalg.norm(
+        #     self.waypoints[1] - self.waypoints[0]
+        # )
 
         if self.draw_waypoints:
             self.target_visual = []
@@ -219,10 +219,13 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 )
 
         self.num_targets_reached = 0
+        # self.prev_num_targets_reached = 0
         self.target_pos = self.waypoints[0]
         self.next_pos = self.waypoints[1]
         self.delta_pos = self.next_pos - self.target_pos
         self.lin_pos_error = self.target_pos - self.start_pos[0]
+        self.lin_pos_error_fixed = np.linalg.norm(self.target_pos - self.start_pos[0])
+        self.prev_lin_pos_error = self.lin_pos_error
         self.angle_diff = 0.0
 
         super().end_reset(seed, options)
@@ -244,10 +247,15 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         ang_pos = (ang_pos + np.pi) % (2 * np.pi) - np.pi
 
+        self.prev_lin_pos_error = self.lin_pos_error
+
         self.lin_pos_error = np.array(self.target_pos - lin_pos)
+
+        # self.prev_num_targets_reached = self.num_targets_reached
 
         # target point reached
         if np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance:
+            print("Point Reached")
             if self.num_targets_reached < self.num_of_targets:
                 self.num_targets_reached += 1
 
@@ -265,16 +273,18 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
             self.delta_pos = self.next_pos - self.target_pos
 
-            self.lin_pos_error = np.array(self.target_pos - lin_pos)
+            self.lin_pos_error = self.target_pos - lin_pos
+            self.lin_pos_error_fixed = np.linalg.norm(self.lin_pos_error)
+            self.prev_lin_pos_error = self.lin_pos_error
 
             # Update the remaining trajectory distance
-            if self.num_targets_reached < self.num_of_targets - 1:
-                self.rem_traj_distance -= np.linalg.norm(
-                    self.waypoints[self.num_targets_reached + 1]
-                    - self.waypoints[self.num_targets_reached]
-                )
-            else:
-                self.rem_traj_distance = 0.0
+            # if self.num_targets_reached < self.num_of_targets - 1:
+            #     self.rem_traj_distance -= np.linalg.norm(
+            #         self.waypoints[self.num_targets_reached + 1]
+            #         - self.waypoints[self.num_targets_reached]
+            #     )
+            # else:
+            #     self.rem_traj_distance = 0.0
 
             if self.draw_waypoints:
                 self.env.removeBody(self.target_visual[0])
@@ -318,19 +328,32 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         if self.termination:
             return
 
+        error_prev_lin_pos = np.linalg.norm(self.prev_lin_pos_error)
         error_lin_pos = np.linalg.norm(self.lin_pos_error)
         # error_angle_diff = np.exp(-error_lin_pos) * self.angle_diff
         error_angular_velocity = np.linalg.norm(self.state[9:12])
+        # mag_lin_vel = np.linalg.norm(self.state[3:6])
         # error_linear_velocity = np.clip(
         #     np.linalg.norm(self.state[3:6]) - self.maximum_velocity, 0, None
         # )
 
-        self.reward = (
-            20
-            - (
-                self.alpha
-                * ((error_lin_pos + self.rem_traj_distance) / self.total_traj_distance)
-            )
+        # if self.num_targets_reached != self.prev_num_targets_reached:
+        #     self.reward = 1000
+        # else:
+        #     self.reward = 0
+
+        self.reward = 0
+
+        # r1 = 0
+        # if mag_lin_vel > 0:
+        r1 = (
+            self.alpha
+            * 500
+            * ((error_prev_lin_pos - error_lin_pos) / (self.lin_pos_error_fixed))
+        )
+
+        self.reward += (
+            r1
             - (self.gamma * error_angular_velocity)
             # - (self.delta * error_linear_velocity)
         )

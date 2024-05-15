@@ -72,11 +72,11 @@ if __name__ == "__main__":
     parser.add_argument("--flight_mode", type=int, default=8)
     parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_dome_size", type=float, default=100)
-    parser.add_argument("--max_duration_seconds", type=float, default=20.0)
+    parser.add_argument("--max_duration_seconds", type=float, default=30.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
-    parser.add_argument("--alpha", type=float, default=15)
+    parser.add_argument("--alpha", type=float, default=5)
     parser.add_argument("--beta", type=float, default=1)
     parser.add_argument("--gamma", type=float, default=0.2)
     parser.add_argument("--delta", type=float, default=1)
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     )
 
     # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_25_01_14_18/best_model_59_1201_0_22864_310.zip",
+    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_14_00_34_19/best_model_10_1601_0_9312_593.zip",
     #     env=env,
     #     tensorboard_log=tensorboard_log_path,
     #     print_system_info=True,
