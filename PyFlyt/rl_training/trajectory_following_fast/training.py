@@ -125,7 +125,7 @@ if __name__ == "__main__":
     output_save_path = os.path.join(
         project_dir,
         "rl_training",
-        "trajectory_following",
+        "trajectory_following_fast",
         "trained_models",
         output_dir_name,
     )

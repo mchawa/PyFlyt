@@ -12,7 +12,6 @@ import numpy as np
 import torch as th
 import torch.multiprocessing as mp
 from stable_baselines3 import PPO
-# from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -117,7 +116,7 @@ if __name__ == "__main__":
     output_save_path = os.path.join(
         project_dir,
         "rl_training",
-        "trajectory_following",
+        "trajectory_following_slow",
         "trained_models",
         output_dir_name,
     )
@@ -141,9 +140,9 @@ if __name__ == "__main__":
     policy_kwargs = {
         "net_arch": net_arch,
         # "lstm_hidden_size" : 32,
-    # "features_extractor_class": CustomFeatureExtractor,
-    # "features_extractor_kwargs": {"features_dim": 256},
-    # "share_features_extractor": True,
+        # "features_extractor_class": CustomFeatureExtractor,
+        # "features_extractor_kwargs": {"features_dim": 256},
+        # "share_features_extractor": True,
     }
 
     # Create trajectory following environment

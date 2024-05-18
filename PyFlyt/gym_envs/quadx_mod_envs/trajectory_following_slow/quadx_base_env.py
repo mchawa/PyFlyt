@@ -99,9 +99,9 @@ class QuadXBaseEnv(gymnasium.Env):
                 -130,  # Minimum p angular velocity
                 -130,  # Minimum q angular velocity
                 -130,  # Minimum r angular velocity
-                -25,  # Minimum X lin_pos error
-                -25,  # Minimum Y lin_pos error
-                -25,  # Minimum Z lin_pos error
+                -20,  # Minimum X lin_pos error
+                -20,  # Minimum Y lin_pos error
+                -20,  # Minimum Z lin_pos error
                 -np.pi,  # Minimum Psi error angle
             ]
         )
@@ -119,9 +119,9 @@ class QuadXBaseEnv(gymnasium.Env):
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
-                25,  # Maximum X lin_pos error
-                25,  # Maximum Y lin_pos error
-                25,  # Maximum Z lin_pos error
+                20,  # Maximum X lin_pos error
+                20,  # Maximum Y lin_pos error
+                20,  # Maximum Z lin_pos error
                 np.pi,  # Maximum Psi error angle
             ]
         )

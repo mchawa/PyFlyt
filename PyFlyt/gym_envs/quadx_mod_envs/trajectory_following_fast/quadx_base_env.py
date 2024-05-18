@@ -108,7 +108,6 @@ class QuadXBaseEnv(gymnasium.Env):
                 -10,  # Minimum Y distance next_pos
                 -10,  # Minimum Z distance next_pos
                 0,  # Minimum Angle Diff
-                # 1,  # Minimum Maximum Velocity
             ]
         )
         self.obs_high = np.array(
@@ -132,7 +131,6 @@ class QuadXBaseEnv(gymnasium.Env):
                 10,  # Maximum Y distance delta_pos
                 10,  # Maximum Z distance delta_pos
                 np.pi,  # Maximum Angle Diff
-                # 20,  # Maximum Maximum Velocity
             ]
         )
 
@@ -389,6 +387,7 @@ class QuadXBaseEnv(gymnasium.Env):
         # Nomralize the observation
         state = None
         if self.normalize_obs:
+            state = np.clip(state, self.obs_low, self.obs_high)
             state = (
                 ((self.state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
             ).astype(np.float32)

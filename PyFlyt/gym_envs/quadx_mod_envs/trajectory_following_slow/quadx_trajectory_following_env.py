@@ -140,76 +140,86 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         super().begin_reset(seed, options)
 
         if self.random_trajectory:
-            self.num_of_targets = int(
-                np.clip(np.ceil(self.max_duration_seconds / 5), 2, None)
-            )
+            samples = np.random.uniform(-10, 10, size=(3))
+            for idx, sample in enumerate(samples):
+                if sample < 0 and sample > -1:
+                    samples[idx] = -1
+                elif sample > 0 and sample < 1:
+                    samples[idx] = 1
+                elif sample == 0:
+                    samples[idx] = np.random.choice([-1, 1], size=(2))
 
-            waypoints = np.zeros((self.num_of_targets, 4))
+            base_point = self.start_pos[0]
 
-            for i in range(self.num_of_targets):
-                samples = np.random.uniform(-10, 10, size=(3))
-                for idx, sample in enumerate(samples):
-                    if sample < 0 and sample > -1:
-                        samples[idx] = -1
-                    elif sample > 0 and sample < 1:
-                        samples[idx] = 1
-                    elif sample == 0:
-                        samples[idx] = np.random.choice([-1, 1], size=(2))
-                if i == 0:
-                    base_point = self.start_pos[0]
-                else:
-                    base_point = waypoints[i - 1][0:3]
+            new_waypoint = base_point + samples
 
-                new_waypoint = base_point + samples
+            if np.abs(new_waypoint[0]) > self.flight_dome_size:
+                new_waypoint[0] = base_point[0] - samples[0]
 
-                if np.abs(new_waypoint[0]) > self.flight_dome_size:
-                    new_waypoint[0] = base_point[0] - samples[0]
+            if np.abs(new_waypoint[1]) > self.flight_dome_size:
+                new_waypoint[1] = base_point[1] - samples[1]
 
-                if np.abs(new_waypoint[1]) > self.flight_dome_size:
-                    new_waypoint[1] = base_point[1] - samples[1]
+            if np.abs(new_waypoint[2]) > self.flight_dome_size or new_waypoint[2] > -1:
+                new_waypoint[2] = base_point[2] - samples[2]
 
-                if (
-                    np.abs(new_waypoint[2]) > self.flight_dome_size
-                    or new_waypoint[2] > -1
-                ):
-                    new_waypoint[2] = base_point[2] - samples[2]
-                
-                target_psi = np.random.uniform(-np.pi, np.pi)
+            self.target_psi = np.random.uniform(-np.pi, np.pi)
+            self.target_pos = new_waypoint
 
-                waypoints[i][0:3] = new_waypoint
-                waypoints[i][3] = target_psi
+            if self.draw_waypoints:
+                if self.orn_conv == "NED_FRD":
+                    target = [
+                        self.target_pos[1],
+                        self.target_pos[0],
+                        -self.target_pos[2],
+                    ]
 
-            self.waypoints = waypoints
+                self.target_visual = self.env.loadURDF(
+                    self.targ_obj_dir,
+                    basePosition=target,
+                    useFixedBase=True,
+                    globalScaling=self.goal_reach_distance / 4.0,
+                )
+
+                self.env.changeVisualShape(
+                    self.target_visual,
+                    linkIndex=-1,
+                    rgbaColor=(0, 1, 0, 1),
+                )
         else:
             self.num_of_targets = self.waypoints.shape[0]
+            self.current_target_index = 0
 
-        if self.draw_waypoints:
-            self.target_visual = []
-            for target in self.waypoints:
-                if self.orn_conv == "NED_FRD":
-                    target = [target[1], target[0], -target[2]]
+            self.target_pos = self.waypoints[0][0:3]
+            self.target_psi = self.waypoints[0][3]
 
-                self.target_visual.append(
-                    self.env.loadURDF(
-                        self.targ_obj_dir,
-                        basePosition=target,
-                        useFixedBase=True,
-                        globalScaling=self.goal_reach_distance / 4.0,
+            if self.draw_waypoints:
+                self.target_visual = []
+                for target in self.waypoints:
+                    if self.orn_conv == "NED_FRD":
+                        target = [target[1], target[0], -target[2]]
+
+                    self.target_visual.append(
+                        self.env.loadURDF(
+                            self.targ_obj_dir,
+                            basePosition=target,
+                            useFixedBase=True,
+                            globalScaling=self.goal_reach_distance / 4.0,
+                        )
                     )
-                )
 
-            for i, visual in enumerate(self.target_visual):
-                self.env.changeVisualShape(
-                    visual,
-                    linkIndex=-1,
-                    rgbaColor=(0, 1 - (i / len(self.target_visual)), 0, 1),
-                )
+                for i, visual in enumerate(self.target_visual):
+                    self.env.changeVisualShape(
+                        visual,
+                        linkIndex=-1,
+                        rgbaColor=(0, 1 - (i / len(self.target_visual)), 0, 1),
+                    )
 
-        self.current_target_index = 0
-        self.lin_pos_error = self.waypoints[0][0:3] - self.start_pos[0]
+        self.lin_pos_error = self.target_pos - self.start_pos[0]
         self.orig_lin_pos_error_mag = np.linalg.norm(self.lin_pos_error)
         self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-        self.yaw_error = ((self.waypoints[0][3] - self.start_orn[0][2]) + np.pi) % (2 * np.pi) - np.pi
+        self.yaw_error = ((self.target_psi - self.start_orn[0][2]) + np.pi) % (
+            2 * np.pi
+        ) - np.pi
 
         super().end_reset(seed, options)
 
@@ -230,22 +240,89 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         ang_pos = (ang_pos + np.pi) % (2 * np.pi) - np.pi
 
-        self.lin_pos_error = np.array(self.waypoints[self.current_target_index][0:3] - lin_pos)
+        self.lin_pos_error = np.array(self.target_pos - lin_pos)
         self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
 
-        self.yaw_error = (self.waypoints[self.current_target_index][3] - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
+        self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
 
-        # 5sec passed or target point reached
-        if (self.random_trajectory and self.step_count > 0 and (self.step_count % (int(5 * self.control_hz)) == 0)) or ((not self.random_trajectory) and np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance and np.linalg.norm(lin_vel) < 0.5):
+        if (
+            self.random_trajectory
+            and self.step_count > 0
+            and (self.step_count % (int(5 * self.control_hz)) == 0)
+        ):
+            samples = np.random.uniform(-10, 10, size=(3))
+            for idx, sample in enumerate(samples):
+                if sample < 0 and sample > -1:
+                    samples[idx] = -1
+                elif sample > 0 and sample < 1:
+                    samples[idx] = 1
+                elif sample == 0:
+                    samples[idx] = np.random.choice([-1, 1], size=(2))
 
-            if self.current_target_index < self.num_of_targets-1:
-                self.current_target_index += 1
+            new_waypoint = lin_pos + samples
 
-            self.lin_pos_error = self.waypoints[self.current_target_index][0:3] - lin_pos
+            if np.abs(new_waypoint[0]) > self.flight_dome_size:
+                new_waypoint[0] = lin_pos[0] - samples[0]
+
+            if np.abs(new_waypoint[1]) > self.flight_dome_size:
+                new_waypoint[1] = lin_pos[1] - samples[1]
+
+            if np.abs(new_waypoint[2]) > self.flight_dome_size or new_waypoint[2] > -1:
+                new_waypoint[2] = lin_pos[2] - samples[2]
+
+            self.target_psi = np.random.uniform(-np.pi, np.pi)
+            self.prev_target_pos = self.target_pos
+            self.target_pos = new_waypoint
+
+            self.lin_pos_error = self.target_pos - lin_pos
             self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
             self.orig_lin_pos_error_mag = np.linalg.norm(self.lin_pos_error)
 
-            self.yaw_error = (self.waypoints[self.current_target_index][3] - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
+            self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
+                2 * np.pi
+            ) - np.pi
+
+            if self.draw_waypoints:
+                self.env.removeBody(self.target_visual)
+
+                if self.orn_conv == "NED_FRD":
+                    target = [
+                        self.target_pos[1],
+                        self.target_pos[0],
+                        -self.target_pos[2],
+                    ]
+
+                self.target_visual = self.env.loadURDF(
+                    self.targ_obj_dir,
+                    basePosition=target,
+                    useFixedBase=True,
+                    globalScaling=self.goal_reach_distance / 4.0,
+                )
+
+                self.env.changeVisualShape(
+                    self.target_visual,
+                    linkIndex=-1,
+                    rgbaColor=(0, 1, 0, 1),
+                )
+        elif (
+            (not self.random_trajectory)
+            and np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance
+            and np.linalg.norm(lin_vel) < 1
+        ):
+
+            if self.current_target_index < self.num_of_targets - 1:
+                self.current_target_index += 1
+
+            self.target_pos = self.waypoints[self.current_target_index][0:3]
+            self.target_psi = self.waypoints[self.current_target_index][3]
+
+            self.lin_pos_error = self.target_pos - lin_pos
+            self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
+            self.orig_lin_pos_error_mag = np.linalg.norm(self.lin_pos_error)
+
+            self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
+                2 * np.pi
+            ) - np.pi
 
             if self.draw_waypoints:
                 self.env.removeBody(self.target_visual[0])
@@ -277,12 +354,15 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         if self.termination:
             return
-        
+
         error_angular_velocity = np.linalg.norm(self.state[9:12])
 
         self.reward = (
             20
-            - (self.alpha * (self.current_lin_pos_erro_mag / self.orig_lin_pos_error_mag))
+            - (
+                self.alpha
+                * (self.current_lin_pos_erro_mag / self.orig_lin_pos_error_mag)
+            )
             - (self.beta * self.yaw_error)
             - (self.gamma * error_angular_velocity)
         )

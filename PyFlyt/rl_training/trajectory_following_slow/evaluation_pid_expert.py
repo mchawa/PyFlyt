@@ -13,7 +13,6 @@ from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following_slow.quadx_trajectory_f
     TrajectoryFollowingPIDExpert,
 )
 
-
 project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
