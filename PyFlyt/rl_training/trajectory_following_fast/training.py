@@ -63,7 +63,7 @@ if __name__ == "__main__":
         nargs="+",
         default=[[5.0, 5.0, -7.0], [5.0, -5.0, -7.0], [5.0, 5.0, -7.0]],
     )
-    parser.add_argument("--goal_reach_distance", type=float, default=0.3)
+    parser.add_argument("--goal_reach_distance", type=float, default=1)
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=True)
@@ -199,24 +199,24 @@ if __name__ == "__main__":
         deterministic=True,
     )
 
-    # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_15_23_29_42/best_model_16_2401_0_9092_3187.zip",
-    #     env=env,
-    #     tensorboard_log=tensorboard_log_path,
-    #     print_system_info=True,
-    #     verbose=1,
-    # )
-
-    model = PPO(
-        "MlpPolicy",
-        env,
-        batch_size=args.batch_size,
-        n_steps=args.update_each_steps,
-        n_epochs=args.n_epochs,
+    model = PPO.load(
+        path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_fast/trained_models/2024_05_17_18_55_41/best_model_29_2401_0_29442_12981.zip",
+        env=env,
         tensorboard_log=tensorboard_log_path,
-        policy_kwargs=policy_kwargs,
+        print_system_info=True,
         verbose=1,
     )
+
+    # model = PPO(
+    #     "MlpPolicy",
+    #     env,
+    #     batch_size=args.batch_size,
+    #     n_steps=args.update_each_steps,
+    #     n_epochs=args.n_epochs,
+    #     tensorboard_log=tensorboard_log_path,
+    #     policy_kwargs=policy_kwargs,
+    #     verbose=1,
+    # )
 
     model.learn(total_timesteps=args.num_of_steps, callback=eval_callback)
 

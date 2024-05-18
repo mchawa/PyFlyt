@@ -336,7 +336,6 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # exceed step count
         if self.step_count >= self.max_steps:
-            print("Num of Points Reached: {}".format(self.num_targets_reached))
             self.info["TimeLimit.truncated"] = True
             self.truncation |= True
 
@@ -387,9 +386,9 @@ class QuadXBaseEnv(gymnasium.Env):
         # Nomralize the observation
         state = None
         if self.normalize_obs:
-            state = np.clip(state, self.obs_low, self.obs_high)
+            state = np.clip(self.state, self.obs_low, self.obs_high)
             state = (
-                ((self.state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
+                ((state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
             ).astype(np.float32)
         else:
             state = self.state

@@ -378,9 +378,9 @@ class QuadXBaseEnv(gymnasium.Env):
         # Nomralize the observation
         state = None
         if self.normalize_obs:
-            state = np.clip(state, self.obs_low, self.obs_high)
+            state = np.clip(self.state, self.obs_low, self.obs_high)
             state = (
-                ((self.state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
+                ((state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
             ).astype(np.float32)
         else:
             state = self.state
