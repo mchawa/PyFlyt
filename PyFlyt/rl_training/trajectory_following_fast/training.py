@@ -16,7 +16,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_env import (
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following_fast.quadx_trajectory_following_env import (
     QuadXTrajectoryFollowingrEnv,
 )
 from PyFlyt.rl_training.custom_eval_callback import CustomEvalCallback
@@ -63,7 +63,6 @@ if __name__ == "__main__":
         nargs="+",
         default=[[5.0, 5.0, -7.0], [5.0, -5.0, -7.0], [5.0, 5.0, -7.0]],
     )
-    parser.add_argument("--maximum_velocity", type=float, default=10)
     parser.add_argument("--goal_reach_distance", type=float, default=0.3)
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
@@ -79,7 +78,6 @@ if __name__ == "__main__":
     parser.add_argument("--alpha", type=float, default=5)
     parser.add_argument("--beta", type=float, default=1)
     parser.add_argument("--gamma", type=float, default=0.2)
-    parser.add_argument("--delta", type=float, default=1)
 
     # Training Args
     parser.add_argument("--num_of_layers", type=int, default=2)
@@ -111,6 +109,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
+    net_arch = dict(pi=[64, 64, 32, 32], vf=[64, 64, 32, 32])
+    # net_arch.append({"vf": [128], "pi": [64]})
+
+    policy_kwargs = {
+        "net_arch": net_arch,
+        # "features_extractor_class": CustomFeatureExtractor,
+        # "features_extractor_kwargs": {"features_dim": 256},
+        # "share_features_extractor": True,
+    }
+
     start_time = datetime.datetime.now()
     output_dir_name = start_time.strftime("%Y_%m_%d_%H_%M_%S")
     output_save_path = os.path.join(
@@ -129,20 +138,10 @@ if __name__ == "__main__":
     with open(info_save_path, "w+") as f:
         f.write("Device Name: {}\n".format(device_name))
         f.write("Arguments: {}\n".format(json.dumps(args.__dict__, indent=4)))
+        f.write("Policy Arguments: {}\n".format(json.dumps(policy_kwargs, indent=4)))
         f.write("Start Time: {}\n".format(start_time))
 
     signal.signal(signal.SIGINT, signal_handler)  # Register the signal handler
-
-    # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
-    # net_arch = dict(pi=[64, 64, 32, 32], vf=[64, 64, 32, 32])
-    # net_arch.append({"vf": [128], "pi": [64]})
-
-    # policy_kwargs = {
-    #     "net_arch": net_arch,
-    # "features_extractor_class": CustomFeatureExtractor,
-    # "features_extractor_kwargs": {"features_dim": 256},
-    # "share_features_extractor": True,
-    # }
 
     # Create trajectory following environment
     env_kwargs = {}
@@ -153,7 +152,6 @@ if __name__ == "__main__":
     env_kwargs["start_orn"] = np.array([args.start_orn])
     env_kwargs["random_trajectory"] = args.random_trajectory
     env_kwargs["waypoints"] = np.array(args.waypoints)
-    env_kwargs["maximum_velocity"] = args.maximum_velocity
     env_kwargs["min_pwm"] = args.min_pwm
     env_kwargs["max_pwm"] = args.max_pwm
     env_kwargs["noisy_motors"] = args.noisy_motors
@@ -168,7 +166,6 @@ if __name__ == "__main__":
     env_kwargs["alpha"] = args.alpha
     env_kwargs["beta"] = args.beta
     env_kwargs["gamma"] = args.gamma
-    env_kwargs["delta"] = args.delta
     env_kwargs["draw_waypoints"] = False
     env_kwargs["render_mode"] = None
     env_kwargs["logger"] = None
@@ -203,7 +200,7 @@ if __name__ == "__main__":
     )
 
     # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_14_00_34_19/best_model_10_1601_0_9312_593.zip",
+    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_15_23_29_42/best_model_16_2401_0_9092_3187.zip",
     #     env=env,
     #     tensorboard_log=tensorboard_log_path,
     #     print_system_info=True,
@@ -217,7 +214,7 @@ if __name__ == "__main__":
         n_steps=args.update_each_steps,
         n_epochs=args.n_epochs,
         tensorboard_log=tensorboard_log_path,
-        # policy_kwargs=policy_kwargs,
+        policy_kwargs=policy_kwargs,
         verbose=1,
     )
 

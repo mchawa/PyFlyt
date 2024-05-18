@@ -12,7 +12,9 @@ from gymnasium import spaces
 from PyFlyt.core.aviary import Aviary
 from PyFlyt.core.utils.compile_helpers import check_numpy
 from PyFlyt.core.wind.gaussian_wind import GaussianWindField
-from PyFlyt.gym_envs.quadx_mod_envs.hovering.quadx_hovering_logger import Logger
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following_fast.quadx_trajectory_following_logger import (
+    Logger,
+)
 
 
 class QuadXBaseEnv(gymnasium.Env):
@@ -99,12 +101,12 @@ class QuadXBaseEnv(gymnasium.Env):
                 -130,  # Minimum p angular velocity
                 -130,  # Minimum q angular velocity
                 -130,  # Minimum r angular velocity
-                -(flight_dome_size + 30),  # Minimum X distance target_pos
-                -(flight_dome_size + 30),  # Minimum Y distance target_pos
-                minimum_z_distance,  # Minimum Z distance target_pos
-                -(flight_dome_size + 30),  # Minimum X distance next_pos
-                -(flight_dome_size + 30),  # Minimum Y distance next_pos
-                minimum_z_distance,  # Minimum Z distance next_pos
+                -20,  # Minimum X distance error_lin_pos
+                -20,  # Minimum Y distance error_lin_pos
+                -20,  # Minimum Z distance error_lin_pos
+                -10,  # Minimum X distance next_pos
+                -10,  # Minimum Y distance next_pos
+                -10,  # Minimum Z distance next_pos
                 0,  # Minimum Angle Diff
                 # 1,  # Minimum Maximum Velocity
             ]
@@ -123,12 +125,12 @@ class QuadXBaseEnv(gymnasium.Env):
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
-                (flight_dome_size + 30),  # Maximum X distance target_pos
-                (flight_dome_size + 30),  # Maximum Y distance target_pos
-                maximum_z_distance,  # Maximum Z distance target_pos
-                (flight_dome_size + 30),  # Maximum X distance next_pos
-                (flight_dome_size + 30),  # Maximum Y distance next_pos
-                maximum_z_distance,  # Maximum Z distance next_pos
+                20,  # Maximum X distance error_lin_pos
+                20,  # Maximum Y distance error_lin_pos
+                20,  # Maximum Z distance error_lin_pos
+                10,  # Maximum X distance delta_pos
+                10,  # Maximum Y distance delta_pos
+                10,  # Maximum Z distance delta_pos
                 np.pi,  # Maximum Angle Diff
                 # 20,  # Maximum Maximum Velocity
             ]
@@ -336,6 +338,7 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # exceed step count
         if self.step_count >= self.max_steps:
+            print("Num of Points Reached: {}".format(self.num_targets_reached))
             self.info["TimeLimit.truncated"] = True
             self.truncation |= True
 

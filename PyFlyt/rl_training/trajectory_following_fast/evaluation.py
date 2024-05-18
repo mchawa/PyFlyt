@@ -1,20 +1,15 @@
-import argparse
-import datetime
-import json
-import os
 import sys
 from pathlib import Path
 
-import gymnasium as gym
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 
-from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_env import (
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following_fast.quadx_trajectory_following_env import (
     QuadXTrajectoryFollowingrEnv,
 )
-from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_logger import (
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following_fast.quadx_trajectory_following_logger import (
     Logger,
 )
 
@@ -22,7 +17,7 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_13_04_25_22/best_model_18_1601_0_14298_2261.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_fast/trained_models/2024_05_17_18_55_41/best_model_29_2401_0_29442_12981.zip"
 
 log_file_path = model_path.replace(".zip", ".csv")
 
@@ -63,7 +58,6 @@ eval_env_kwargs["start_pos"] = np.array([[5, 0, -5]])
 eval_env_kwargs["start_orn"] = np.array([np.deg2rad([0, 0, 0])])
 eval_env_kwargs["random_trajectory"] = False
 eval_env_kwargs["waypoints"] = waypoints
-eval_env_kwargs["maximum_velocity"] = 20.0
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
@@ -71,17 +65,16 @@ eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 8
 eval_env_kwargs["simulate_wind"] = False
 eval_env_kwargs["flight_dome_size"] = 100
-eval_env_kwargs["max_duration_seconds"] = 20
+eval_env_kwargs["max_duration_seconds"] = 30
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["normalize_actions"] = True
 eval_env_kwargs["normalize_obs"] = True
-eval_env_kwargs["alpha"] = 15
+eval_env_kwargs["alpha"] = 5
 eval_env_kwargs["beta"] = 1
 eval_env_kwargs["gamma"] = 0.2
-eval_env_kwargs["delta"] = 1
 eval_env_kwargs["draw_waypoints"] = True
-# eval_env_kwargs["render_mode"] = "human"
-eval_env_kwargs["render_mode"] = None
+eval_env_kwargs["render_mode"] = "human"
+# eval_env_kwargs["render_mode"] = None
 # eval_env_kwargs["logger"] = Logger(log_file_path=log_file_path)
 eval_env_kwargs["logger"] = None
 
