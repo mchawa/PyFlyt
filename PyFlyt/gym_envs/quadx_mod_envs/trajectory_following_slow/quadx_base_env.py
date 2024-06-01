@@ -245,6 +245,8 @@ class QuadXBaseEnv(gymnasium.Env):
             wind_type = GaussianWindField
             wind_options = dict()
             wind_options["orn_conv"] = self.orn_conv
+            wind_options["base_wind_velocities"] = self.base_wind_velocities
+            wind_options["max_gust_strength"] = self.max_gust_strength
         else:
             wind_type = None
             wind_options = dict()
@@ -406,12 +408,6 @@ class QuadXBaseEnv(gymnasium.Env):
                 )
 
                 self.logger.log_episode()
-
-        # print(
-        #     "State:\n \tLinear Error: X={}, Y={}, Z={}\nAction: {}\nReward: {}\n\n".format(
-        #         self.state[-3], self.state[-2], self.state[-3], self.action, self.reward
-        #     )
-        # )
 
         return state, self.reward, self.termination, self.truncation, self.info
 

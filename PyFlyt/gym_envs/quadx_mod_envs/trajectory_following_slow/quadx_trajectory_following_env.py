@@ -46,13 +46,15 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         drone_model: str = "cf2x",
         flight_mode: int = 9,
         simulate_wind: bool = False,
+        base_wind_velocities: None | np.ndarray = None,
+        max_gust_strength: None | float = None,
         flight_dome_size: float = 100,
         max_duration_seconds: float = 30.0,
         angle_representation: str = "euler",
         normalize_obs: bool = True,
         normalize_actions: bool = True,
         alpha: float = 2,
-        beta: float = 1,
+        beta: float = 4,
         gamma: float = 0.2,
         draw_waypoints: bool = False,
         render_mode: None | str = None,
@@ -82,6 +84,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             drone_model=drone_model,
             flight_mode=flight_mode,
             simulate_wind=simulate_wind,
+            base_wind_velocities=base_wind_velocities,
+            max_gust_strength=max_gust_strength,
             flight_dome_size=flight_dome_size,
             max_duration_seconds=max_duration_seconds,
             angle_representation=angle_representation,
@@ -245,68 +249,11 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
 
-        # if (
-        #     self.random_trajectory
-        #     and self.step_count > 0
-        #     and (self.step_count % (int(10 * self.control_hz)) == 0)
-        # ):
-        #     samples = np.random.uniform(-10, 10, size=(3))
-        #     for idx, sample in enumerate(samples):
-        #         if sample < 0 and sample > -1:
-        #             samples[idx] = -1
-        #         elif sample > 0 and sample < 1:
-        #             samples[idx] = 1
-        #         elif sample == 0:
-        #             samples[idx] = np.random.choice([-1, 1], size=(2))
-
-        #     new_waypoint = lin_pos + samples
-
-        #     if np.abs(new_waypoint[0]) > self.flight_dome_size:
-        #         new_waypoint[0] = lin_pos[0] - samples[0]
-
-        #     if np.abs(new_waypoint[1]) > self.flight_dome_size:
-        #         new_waypoint[1] = lin_pos[1] - samples[1]
-
-        #     if np.abs(new_waypoint[2]) > self.flight_dome_size or new_waypoint[2] > -1:
-        #         new_waypoint[2] = lin_pos[2] - samples[2]
-
-        #     self.target_psi = np.random.uniform(-np.pi, np.pi)
-        #     self.target_pos = new_waypoint
-
-        #     self.lin_pos_error = self.target_pos - lin_pos
-        #     self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-        #     self.orig_lin_pos_error_mag = np.linalg.norm(self.lin_pos_error)
-
-        #     self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
-        #         2 * np.pi
-        #     ) - np.pi
-
-            # if self.draw_waypoints:
-            #     self.env.removeBody(self.target_visual)
-
-            #     if self.orn_conv == "NED_FRD":
-            #         target = [
-            #             self.target_pos[1],
-            #             self.target_pos[0],
-            #             -self.target_pos[2],
-            #         ]
-
-            #     self.target_visual = self.env.loadURDF(
-            #         self.targ_obj_dir,
-            #         basePosition=target,
-            #         useFixedBase=True,
-            #         globalScaling=self.goal_reach_distance / 4.0,
-            #     )
-
-            #     self.env.changeVisualShape(
-            #         self.target_visual,
-            #         linkIndex=-1,
-            #         rgbaColor=(0, 1, 0, 1),
-            #     )
         if (
             (not self.random_trajectory)
             and np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance
             and np.linalg.norm(lin_vel) < 1
+            and np.abs(self.yaw_error) < 0.0872665  # 5 Degs
         ):
 
             if self.current_target_index < self.num_of_targets - 1:
@@ -323,7 +270,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 2 * np.pi
             ) - np.pi
 
-            if self.draw_waypoints:
+            if self.draw_waypoints and len(self.target_visual) > 0:
                 self.env.removeBody(self.target_visual[0])
                 self.target_visual = self.target_visual[1:]
 
@@ -357,12 +304,15 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         error_angular_velocity = np.linalg.norm(self.state[9:12])
 
         self.reward = 0
-        if self.current_lin_pos_erro_mag < self.goal_reach_distance:
+        if (
+            self.current_lin_pos_erro_mag < self.goal_reach_distance
+            and np.abs(self.yaw_error) < 0.0872665  # 5 Degs:
+        ):
             self.reward = 20
 
         self.reward += (
             20
             - (self.alpha * self.current_lin_pos_erro_mag)
-            - (self.beta * self.yaw_error)
+            - (self.beta * np.abs(self.yaw_error))
             - (self.gamma * error_angular_velocity)
         )

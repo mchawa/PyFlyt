@@ -48,12 +48,14 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         drone_model: str = "cf2x",
         flight_mode: int = 9,
         simulate_wind: bool = False,
+        base_wind_velocities: None | np.ndarray = None,
+        max_gust_strength: None | float = None,
         flight_dome_size: float = 100,
         max_duration_seconds: float = 30.0,
         angle_representation: str = "euler",
         normalize_obs: bool = True,
         normalize_actions: bool = True,
-        alpha: float = 5,
+        alpha: float = 10,
         beta: float = 1,
         gamma: float = 0.2,
         draw_waypoints: bool = False,
@@ -84,6 +86,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             drone_model=drone_model,
             flight_mode=flight_mode,
             simulate_wind=simulate_wind,
+            base_wind_velocities=base_wind_velocities,
+            max_gust_strength=max_gust_strength,
             flight_dome_size=flight_dome_size,
             max_duration_seconds=max_duration_seconds,
             angle_representation=angle_representation,
@@ -143,7 +147,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         if self.random_trajectory:
             self.num_of_targets = int(
-                np.clip(np.ceil(self.max_duration_seconds * 0.5), 2, None)
+                np.clip(np.ceil(self.max_duration_seconds), 2, None)
             )
 
             waypoints = np.zeros((self.num_of_targets, 3))
@@ -263,7 +267,7 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
             self.lin_pos_error_fixed = np.linalg.norm(self.lin_pos_error)
             self.prev_lin_pos_error = self.lin_pos_error
 
-            if self.draw_waypoints:
+            if self.draw_waypoints and self.num_targets_reached < self.num_of_targets:
                 self.env.removeBody(self.target_visual[0])
                 self.target_visual = self.target_visual[1:]
 
@@ -317,6 +321,5 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         self.reward += (
             self.alpha
-            * 1000
-            * ((error_prev_lin_pos - error_lin_pos) / (self.lin_pos_error_fixed))
+            * (100 * (error_prev_lin_pos - error_lin_pos) / self.lin_pos_error_fixed)
         ) - (self.gamma * error_angular_velocity)

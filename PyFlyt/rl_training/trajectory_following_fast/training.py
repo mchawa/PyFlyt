@@ -69,13 +69,13 @@ if __name__ == "__main__":
     parser.add_argument("--noisy_motors", type=bool, default=True)
     parser.add_argument("--drone_model", type=str, default="cf2x")
     parser.add_argument("--flight_mode", type=int, default=8)
-    parser.add_argument("--simulate_wind", type=bool, default=False)
+    parser.add_argument("--simulate_wind", type=bool, default=True)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=30.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
-    parser.add_argument("--alpha", type=float, default=5)
+    parser.add_argument("--alpha", type=float, default=10)
     parser.add_argument("--beta", type=float, default=1)
     parser.add_argument("--gamma", type=float, default=0.2)
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     eval_env = make_vec_env(
         env_id=QuadXTrajectoryFollowingrEnv,
-        n_envs=1,
+        n_envs=args.num_of_workers,
         env_kwargs=eval_env_kwargs,
         vec_env_cls=SubprocVecEnv,
     )
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     )
 
     model = PPO.load(
-        path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_fast/trained_models/2024_05_17_18_55_41/best_model_29_2401_0_29442_12981.zip",
+        path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_fast/trained_models/2024_05_26_17_38_28/best_model_8_2401_0_35789_2973.zip",
         env=env,
         tensorboard_log=tensorboard_log_path,
         print_system_info=True,

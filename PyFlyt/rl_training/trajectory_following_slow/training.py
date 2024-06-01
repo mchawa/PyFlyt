@@ -76,7 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
     parser.add_argument("--alpha", type=float, default=2)
-    parser.add_argument("--beta", type=float, default=8)
+    parser.add_argument("--beta", type=float, default=4)
     parser.add_argument("--gamma", type=float, default=0.2)
 
     # Training Args
