@@ -16,7 +16,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following.quadx_trajectory_following_env import (
+from PyFlyt.gym_envs.quadx_mod_envs.trajectory_following_slow.quadx_trajectory_following_env import (
     QuadXTrajectoryFollowingrEnv,
 )
 from PyFlyt.rl_training.custom_eval_callback import CustomEvalCallback
@@ -63,23 +63,21 @@ if __name__ == "__main__":
         nargs="+",
         default=[[5.0, 5.0, -7.0], [5.0, -5.0, -7.0], [5.0, 5.0, -7.0]],
     )
-    parser.add_argument("--maximum_velocity", type=float, default=10)
     parser.add_argument("--goal_reach_distance", type=float, default=0.3)
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=True)
     parser.add_argument("--drone_model", type=str, default="cf2x")
     parser.add_argument("--flight_mode", type=int, default=8)
-    parser.add_argument("--simulate_wind", type=bool, default=False)
+    parser.add_argument("--simulate_wind", type=bool, default=True)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=30.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
     parser.add_argument("--alpha", type=float, default=2)
-    parser.add_argument("--beta", type=float, default=1)
-    parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--delta", type=float, default=1)
+    parser.add_argument("--beta", type=float, default=8)
+    parser.add_argument("--gamma", type=float, default=0.2)
 
     # Training Args
     parser.add_argument("--num_of_layers", type=int, default=2)
@@ -134,7 +132,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)  # Register the signal handler
 
     # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
-    net_arch = dict(pi=[64, 64], vf=[64, 64])
+    net_arch = dict(pi=[64, 64, 32, 32], vf=[64, 64, 32, 32])
     # net_arch.append({"vf": [128], "pi": [64]})
 
     policy_kwargs = {
@@ -154,7 +152,6 @@ if __name__ == "__main__":
     env_kwargs["start_orn"] = np.array([args.start_orn])
     env_kwargs["random_trajectory"] = args.random_trajectory
     env_kwargs["waypoints"] = np.array(args.waypoints)
-    env_kwargs["maximum_velocity"] = args.maximum_velocity
     env_kwargs["min_pwm"] = args.min_pwm
     env_kwargs["max_pwm"] = args.max_pwm
     env_kwargs["noisy_motors"] = args.noisy_motors
@@ -169,7 +166,6 @@ if __name__ == "__main__":
     env_kwargs["alpha"] = args.alpha
     env_kwargs["beta"] = args.beta
     env_kwargs["gamma"] = args.gamma
-    env_kwargs["delta"] = args.delta
     env_kwargs["draw_waypoints"] = False
     env_kwargs["render_mode"] = None
     env_kwargs["logger"] = None
@@ -188,7 +184,7 @@ if __name__ == "__main__":
 
     eval_env = make_vec_env(
         env_id=QuadXTrajectoryFollowingrEnv,
-        n_envs=1,
+        n_envs=args.num_of_workers,
         env_kwargs=eval_env_kwargs,
         vec_env_cls=SubprocVecEnv,
     )

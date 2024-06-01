@@ -47,11 +47,11 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         flight_mode: int = 9,
         simulate_wind: bool = False,
         flight_dome_size: float = 100,
-        max_duration_seconds: float = 10.0,
+        max_duration_seconds: float = 30.0,
         angle_representation: str = "euler",
         normalize_obs: bool = True,
         normalize_actions: bool = True,
-        alpha: float = 15,
+        alpha: float = 2,
         beta: float = 1,
         gamma: float = 0.2,
         draw_waypoints: bool = False,
@@ -245,66 +245,65 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
 
+        # if (
+        #     self.random_trajectory
+        #     and self.step_count > 0
+        #     and (self.step_count % (int(10 * self.control_hz)) == 0)
+        # ):
+        #     samples = np.random.uniform(-10, 10, size=(3))
+        #     for idx, sample in enumerate(samples):
+        #         if sample < 0 and sample > -1:
+        #             samples[idx] = -1
+        #         elif sample > 0 and sample < 1:
+        #             samples[idx] = 1
+        #         elif sample == 0:
+        #             samples[idx] = np.random.choice([-1, 1], size=(2))
+
+        #     new_waypoint = lin_pos + samples
+
+        #     if np.abs(new_waypoint[0]) > self.flight_dome_size:
+        #         new_waypoint[0] = lin_pos[0] - samples[0]
+
+        #     if np.abs(new_waypoint[1]) > self.flight_dome_size:
+        #         new_waypoint[1] = lin_pos[1] - samples[1]
+
+        #     if np.abs(new_waypoint[2]) > self.flight_dome_size or new_waypoint[2] > -1:
+        #         new_waypoint[2] = lin_pos[2] - samples[2]
+
+        #     self.target_psi = np.random.uniform(-np.pi, np.pi)
+        #     self.target_pos = new_waypoint
+
+        #     self.lin_pos_error = self.target_pos - lin_pos
+        #     self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
+        #     self.orig_lin_pos_error_mag = np.linalg.norm(self.lin_pos_error)
+
+        #     self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
+        #         2 * np.pi
+        #     ) - np.pi
+
+            # if self.draw_waypoints:
+            #     self.env.removeBody(self.target_visual)
+
+            #     if self.orn_conv == "NED_FRD":
+            #         target = [
+            #             self.target_pos[1],
+            #             self.target_pos[0],
+            #             -self.target_pos[2],
+            #         ]
+
+            #     self.target_visual = self.env.loadURDF(
+            #         self.targ_obj_dir,
+            #         basePosition=target,
+            #         useFixedBase=True,
+            #         globalScaling=self.goal_reach_distance / 4.0,
+            #     )
+
+            #     self.env.changeVisualShape(
+            #         self.target_visual,
+            #         linkIndex=-1,
+            #         rgbaColor=(0, 1, 0, 1),
+            #     )
         if (
-            self.random_trajectory
-            and self.step_count > 0
-            and (self.step_count % (int(5 * self.control_hz)) == 0)
-        ):
-            samples = np.random.uniform(-10, 10, size=(3))
-            for idx, sample in enumerate(samples):
-                if sample < 0 and sample > -1:
-                    samples[idx] = -1
-                elif sample > 0 and sample < 1:
-                    samples[idx] = 1
-                elif sample == 0:
-                    samples[idx] = np.random.choice([-1, 1], size=(2))
-
-            new_waypoint = lin_pos + samples
-
-            if np.abs(new_waypoint[0]) > self.flight_dome_size:
-                new_waypoint[0] = lin_pos[0] - samples[0]
-
-            if np.abs(new_waypoint[1]) > self.flight_dome_size:
-                new_waypoint[1] = lin_pos[1] - samples[1]
-
-            if np.abs(new_waypoint[2]) > self.flight_dome_size or new_waypoint[2] > -1:
-                new_waypoint[2] = lin_pos[2] - samples[2]
-
-            self.target_psi = np.random.uniform(-np.pi, np.pi)
-            self.prev_target_pos = self.target_pos
-            self.target_pos = new_waypoint
-
-            self.lin_pos_error = self.target_pos - lin_pos
-            self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-            self.orig_lin_pos_error_mag = np.linalg.norm(self.lin_pos_error)
-
-            self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
-                2 * np.pi
-            ) - np.pi
-
-            if self.draw_waypoints:
-                self.env.removeBody(self.target_visual)
-
-                if self.orn_conv == "NED_FRD":
-                    target = [
-                        self.target_pos[1],
-                        self.target_pos[0],
-                        -self.target_pos[2],
-                    ]
-
-                self.target_visual = self.env.loadURDF(
-                    self.targ_obj_dir,
-                    basePosition=target,
-                    useFixedBase=True,
-                    globalScaling=self.goal_reach_distance / 4.0,
-                )
-
-                self.env.changeVisualShape(
-                    self.target_visual,
-                    linkIndex=-1,
-                    rgbaColor=(0, 1, 0, 1),
-                )
-        elif (
             (not self.random_trajectory)
             and np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance
             and np.linalg.norm(lin_vel) < 1
@@ -357,12 +356,13 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         error_angular_velocity = np.linalg.norm(self.state[9:12])
 
-        self.reward = (
+        self.reward = 0
+        if self.current_lin_pos_erro_mag < self.goal_reach_distance:
+            self.reward = 20
+
+        self.reward += (
             20
-            - (
-                self.alpha
-                * (self.current_lin_pos_erro_mag / self.orig_lin_pos_error_mag)
-            )
+            - (self.alpha * self.current_lin_pos_erro_mag)
             - (self.beta * self.yaw_error)
             - (self.gamma * error_angular_velocity)
         )
