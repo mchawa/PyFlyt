@@ -15,7 +15,7 @@ class GaussianWindField(WindFieldClass):
         super().__init__(np_random)
         if base_wind_velocities is None:
             self.base_wind_velocities = np.random.uniform(
-                low=[-5.0, -5.0, -1.0], high=[5.0, 5.0, 1.0], size=(3,)
+                low=[-7.0, -7.0, -2.0], high=[7.0, 7.0, 2.0], size=(3,)
             )
         else:
             self.base_wind_velocities = base_wind_velocities

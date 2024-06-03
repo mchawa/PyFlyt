@@ -104,8 +104,6 @@ class QuadXBaseEnv(gymnasium.Env):
                 -20,  # Minimum X distance error
                 -20,  # Minimum Y distance error
                 -20,  # Minimum Z distance error
-                -np.pi,  # Minimum Phi angle error
-                -np.pi,  # Minimum Theta angle error
                 -np.pi,  # Minimum Psi angle error
             ]
         )
@@ -117,17 +115,15 @@ class QuadXBaseEnv(gymnasium.Env):
                 50,  # Maximum X velocity
                 50,  # Maximum Y velocity
                 50,  # Maximum Z velocity
-                np.pi,  # Maximum Phi angle (sin representation)
-                np.pi,  # Maximum Theta angle (sin representation)
-                np.pi,  # Maximum Psi angle (sin representation)
+                np.pi,  # Maximum Phi angle
+                np.pi,  # Maximum Theta angle
+                np.pi,  # Maximum Psi angle
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
                 20,  # Maximum X distance error
                 20,  # Maximum Y distance error
                 20,  # Maximum Z distance error
-                np.pi,  # Maximum Phi angle error
-                np.pi,  # Maximum Theta angle error
                 np.pi,  # Maximum Psi angle error
             ]
         )
@@ -396,7 +392,7 @@ class QuadXBaseEnv(gymnasium.Env):
             self.logger.add(
                 self.step_count - 1,
                 self.target_pos,
-                self.target_orn,
+                self.target_psi,
                 old_state,
                 action,
                 self.reward,
@@ -406,7 +402,7 @@ class QuadXBaseEnv(gymnasium.Env):
                 self.logger.add(
                     self.step_count,
                     self.target_pos,
-                    self.target_orn,
+                    self.target_psi,
                     self.state,
                     [0, 0, 0, 0],
                     0,

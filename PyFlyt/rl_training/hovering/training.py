@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument("--flight_mode", type=int, default=8)
     parser.add_argument("--simulate_wind", type=bool, default=True)
     parser.add_argument("--flight_dome_size", type=float, default=100)
-    parser.add_argument("--max_duration_seconds", type=float, default=30.0)
+    parser.add_argument("--max_duration_seconds", type=float, default=10.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
     parser.add_argument("--hovering_dome_size", type=float, default=10.0)
     parser.add_argument("--normalize_obs", type=bool, default=True)

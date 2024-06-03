@@ -31,8 +31,8 @@ if project_dir not in sys.path:
 #     "best_model_59_1201_0_22864_310.zip",
 # )
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_05_03_20_56_19/best_model_24_801_0_15251_81.zip"
-# model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_05_01_17_59_06/best_model_33_801_0_15543_125.zip"
+# model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_06_01_18_30_12/best_model_22_3601_0_66896_1227.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_06_03_01_23_55/best_model_22_801_0_15660_90.zip"
 
 log_dir = model_path.replace(".zip", "_results")
 
@@ -54,17 +54,17 @@ eval_env_kwargs = {}
 eval_env_kwargs["control_hz"] = 80
 eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
-eval_env_kwargs["target_pos"] = np.array([0, 0, -10.0])
-eval_env_kwargs["target_psi"] = np.deg2rad(45)
-eval_env_kwargs["start_pos"] = np.array([[0.5, -0.5, -10.5]])
-eval_env_kwargs["start_orn"] = np.array([np.deg2rad([5, -5, 0])])
+eval_env_kwargs["target_pos"] = np.array([5, 5, -5])
+eval_env_kwargs["target_psi"] = np.deg2rad(90)
+eval_env_kwargs["start_pos"] = np.array([[4, 6, -4]])
+eval_env_kwargs["start_orn"] = np.array([np.deg2rad([-10, 10, -90])])
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
 eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 8
 eval_env_kwargs["simulate_wind"] = True
-eval_env_kwargs["base_wind_velocities"] = np.array([-2.0, 2.0, 0.5])
+eval_env_kwargs["base_wind_velocities"] = np.array([5, -5, -1.0])
 # eval_env_kwargs["base_wind_velocities"] = None
 eval_env_kwargs["max_gust_strength"] = 7.0
 # eval_env_kwargs["max_gust_strength"] = None
@@ -78,8 +78,8 @@ eval_env_kwargs["alpha"] = 2
 eval_env_kwargs["beta"] = 0.1
 eval_env_kwargs["gamma"] = 8
 eval_env_kwargs["delta"] = 0.1
-# eval_env_kwargs["render_mode"] = "human"
-eval_env_kwargs["render_mode"] = None
+eval_env_kwargs["render_mode"] = "human"
+# eval_env_kwargs["render_mode"] = None
 eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
 # eval_env_kwargs["logger"] = None
 #

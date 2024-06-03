@@ -94,7 +94,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
         )
         """ENVIRONMENT CONSTANTS"""
         self.target_pos = np.array(target_pos, dtype=np.float32).round(3)
-        self.target_orn = np.array([0.0, 0.0, target_psi], dtype=np.float32).round(3)
+        self.target_psi = np.float32(target_psi).round(3)
         self.hovering_dome_size = hovering_dome_size
         self.randomize_start = randomize_start
         self.alpha = alpha
@@ -121,10 +121,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
 
             self.target_pos = np.array([x, y, z], dtype=np.float32).round(3)
 
-            target_psi = np.random.uniform(-np.pi, np.pi)
-            self.target_orn = np.array([0.0, 0.0, target_psi], dtype=np.float32).round(
-                3
-            )
+            self.target_psi = np.float32(np.random.uniform(-np.pi, np.pi)).round(3)
 
             # Initialize the position
             self.start_pos = np.array(
@@ -165,9 +162,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
 
         ang_pos = (ang_pos + np.pi) % (2 * np.pi) - np.pi
 
-        ang_pos_error = (np.array(self.target_orn - ang_pos) + np.pi) % (
-            2 * np.pi
-        ) - np.pi
+        ang_pos_error = ((self.target_psi - ang_pos[2]) + np.pi) % (2 * np.pi) - np.pi
         lin_pos_error = np.array(self.target_pos - lin_pos)
 
         self.state = np.array(
@@ -177,7 +172,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
                 *ang_pos,
                 *ang_vel,
                 *lin_pos_error,
-                *ang_pos_error,
+                ang_pos_error,
             ],
             dtype=np.float32,
         ).round(3)
@@ -191,7 +186,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
 
         error_distance = np.linalg.norm(self.state[12:15])
         error_velocity = np.linalg.norm(self.state[3:6])
-        error_orientation = np.linalg.norm(self.state[15:18])
+        error_orientation = np.abs(self.state[15])
         error_angular_velocity = np.linalg.norm(self.state[9:12])
 
         self.reward = 20 + (

@@ -31,6 +31,8 @@ class QuadXBaseEnv(gymnasium.Env):
         max_pwm: float = 1.0,
         drone_model: str = "cf2x",
         simulate_wind: bool = False,
+        base_wind_velocities: None | np.ndarray = None,
+        max_gust_strength: None | float = None,
         flight_mode: int = 0,
         flight_dome_size: float = 100,
         max_duration_seconds: float = 10.0,
@@ -184,6 +186,8 @@ class QuadXBaseEnv(gymnasium.Env):
         self.noisy_motors = noisy_motors
         self.drone_model = drone_model
         self.simulate_wind = simulate_wind
+        self.base_wind_velocities = base_wind_velocities
+        self.max_gust_strength = max_gust_strength
         self.normalize_obs = normalize_obs
         self.normalize_actions = normalize_actions
 

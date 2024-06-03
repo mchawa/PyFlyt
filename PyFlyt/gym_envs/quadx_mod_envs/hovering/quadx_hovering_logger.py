@@ -47,10 +47,6 @@ class Logger:
             "error_x (m)",
             "error_y (m)",
             "error_z (m)",
-            "error_phi (rad)",
-            "error_phi (deg)",
-            "error_theta (rad)",
-            "error_theta (deg)",
             "error_psi (rad)",
             "error_psi (deg)",
             "motor_1_input (PWM [0-1])",
@@ -60,7 +56,7 @@ class Logger:
             "reward",
         ]
 
-    def add(self, timestamp, target_pos, target_orn, state, action, reward):
+    def add(self, timestamp, target_pos, target_psi, state, action, reward):
         """
         Add state action info into buffer
 
@@ -70,7 +66,6 @@ class Logger:
                 action(int): action taken on given state
 
         """
-        target_psi = target_orn[2]
         target_psi_deg = np.rad2deg(target_psi)
 
         ang_pos_rad = state[6:9]
@@ -79,7 +74,7 @@ class Logger:
         ang_vel_rad = state[9:12]
         ang_vel_deg = np.rad2deg(state[9:12])
 
-        error_ang_pos_rad = state[15:18]
+        error_ang_pos_rad = state[15]
         error_ang_pos_deg = np.rad2deg(error_ang_pos_rad)
 
         entry = (
@@ -104,12 +99,8 @@ class Logger:
                     [ang_vel_rad[2]],
                     [ang_vel_deg[2]],
                     state[12:15],
-                    [error_ang_pos_rad[0]],
-                    [error_ang_pos_deg[0]],
-                    [error_ang_pos_rad[1]],
-                    [error_ang_pos_deg[1]],
-                    [error_ang_pos_rad[2]],
-                    [error_ang_pos_deg[2]],
+                    [error_ang_pos_rad],
+                    [error_ang_pos_deg],
                     action,
                     [reward],
                 )
@@ -200,45 +191,20 @@ class Logger:
         max_error_y = np.max(np.abs(np.array([entry[25] for entry in self.buffer])))
         max_error_z = np.max(np.abs(np.array([entry[26] for entry in self.buffer])))
 
-        avg_error_phi_rad = np.mean(
-            np.abs(np.array([entry[27] for entry in self.buffer]))
-        )
-        avg_error_phi_deg = np.mean(
-            np.abs(np.array([entry[28] for entry in self.buffer]))
-        )
-        avg_error_theta_rad = np.mean(
-            np.abs(np.array([entry[29] for entry in self.buffer]))
-        )
-        avg_error_theta_deg = np.mean(
-            np.abs(np.array([entry[30] for entry in self.buffer]))
-        )
         avg_error_psi_rad = np.mean(
-            np.abs(np.array([entry[31] for entry in self.buffer]))
+            np.abs(np.array([entry[27] for entry in self.buffer]))
         )
         avg_error_psi_deg = np.mean(
-            np.abs(np.array([entry[32] for entry in self.buffer]))
-        )
-
-        max_error_phi_rad = np.max(
-            np.abs(np.array([entry[27] for entry in self.buffer]))
-        )
-        max_error_phi_deg = np.max(
             np.abs(np.array([entry[28] for entry in self.buffer]))
         )
-        max_error_theta_rad = np.max(
-            np.abs(np.array([entry[29] for entry in self.buffer]))
-        )
-        max_error_theta_deg = np.max(
-            np.abs(np.array([entry[30] for entry in self.buffer]))
-        )
         max_error_psi_rad = np.max(
-            np.abs(np.array([entry[31] for entry in self.buffer]))
+            np.abs(np.array([entry[27] for entry in self.buffer]))
         )
         max_error_psi_deg = np.max(
-            np.abs(np.array([entry[32] for entry in self.buffer]))
+            np.abs(np.array([entry[28] for entry in self.buffer]))
         )
 
-        avg_reward = np.mean(np.array([entry[37] for entry in self.buffer]))
+        avg_reward = np.mean(np.array([entry[33] for entry in self.buffer]))
 
         labels = [
             "X-axis",
@@ -247,17 +213,9 @@ class Logger:
             "X-axis",
             "Y-axis",
             "Z-axis",
-            "Roll",
-            "Pitch",
             "Yaw",
-            "Roll",
-            "Pitch",
             "Yaw",
-            "Roll",
-            "Pitch",
             "Yaw",
-            "Roll",
-            "Pitch",
             "Yaw",
             "Average Reward",
         ]
@@ -269,19 +227,10 @@ class Logger:
             max_error_x,
             max_error_y,
             max_error_z,
-            avg_error_phi_rad,
-            avg_error_theta_rad,
             avg_error_psi_rad,
-            max_error_phi_rad,
-            max_error_theta_rad,
             max_error_psi_rad,
-            avg_error_phi_deg,
-            avg_error_theta_deg,
             avg_error_psi_deg,
-            max_error_theta_deg,
-            max_error_phi_deg,
             max_error_psi_deg,
-            avg_reward,
         ]
 
         colors = plt.rcParams["axes.prop_cycle"].by_key()["color"][0:3]
@@ -290,13 +239,13 @@ class Logger:
         ax2[0, 0].set_title("Avg. Error in Position (m)")
         ax2[0, 1].bar(labels[3:6], values[3:6], color=colors)
         ax2[0, 1].set_title("Max. Error in Position (m)")
-        ax2[1, 0].bar(labels[6:9], values[6:9], color=colors)
+        ax2[1, 0].bar(labels[6], values[6], color=colors)
         ax2[1, 0].set_title("Avg. Error in Orientation (rad)")
-        ax2[1, 1].bar(labels[9:12], values[9:12], color=colors)
+        ax2[1, 1].bar(labels[7], values[7], color=colors)
         ax2[1, 1].set_title("Max. Error in Orientation (rad)")
-        ax2[2, 0].bar(labels[12:15], values[12:15], color=colors)
+        ax2[2, 0].bar(labels[8], values[8], color=colors)
         ax2[2, 0].set_title("Avg. Error in Orientation (deg)")
-        ax2[2, 1].bar(labels[15:18], values[15:18], color=colors)
+        ax2[2, 1].bar(labels[9], values[9], color=colors)
         ax2[2, 1].set_title("Max. Error in Orientation (deg)")
 
         for ax in fig2.axes:

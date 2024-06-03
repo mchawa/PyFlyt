@@ -24,8 +24,8 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-target_pos = np.array([0, 0, -10.0])
-target_psi = np.deg2rad(45)
+target_pos = np.array([5, 5, -5])
+target_psi = np.deg2rad(90)
 
 model = HoveringPIDExpert(taget_pos=target_pos, target_psi=target_psi)
 
@@ -41,15 +41,15 @@ eval_env_kwargs["orn_conv"] = "NED_FRD"
 eval_env_kwargs["randomize_start"] = False
 eval_env_kwargs["target_pos"] = target_pos
 eval_env_kwargs["target_psi"] = target_psi
-eval_env_kwargs["start_pos"] = np.array([[0.5, -0.5, -10.5]])
-eval_env_kwargs["start_orn"] = np.array([np.deg2rad([5, -5, 0])])
+eval_env_kwargs["start_pos"] = np.array([[4, 6, -4]])
+eval_env_kwargs["start_orn"] = np.array([np.deg2rad([-10, 10, -90])])
 eval_env_kwargs["min_pwm"] = 0.0
 eval_env_kwargs["max_pwm"] = 1.0
 eval_env_kwargs["noisy_motors"] = True
 eval_env_kwargs["drone_model"] = "cf2x"
 eval_env_kwargs["flight_mode"] = 7
 eval_env_kwargs["simulate_wind"] = True
-eval_env_kwargs["base_wind_velocities"] = np.array([-2.0, 2.0, 0.5])
+eval_env_kwargs["base_wind_velocities"] = np.array([4.0, -4.0, -1])
 # eval_env_kwargs["base_wind_velocities"] = None
 eval_env_kwargs["max_gust_strength"] = 7.0
 # eval_env_kwargs["max_gust_strength"] = None
