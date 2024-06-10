@@ -58,19 +58,18 @@ if __name__ == "__main__":
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
-    parser.add_argument("--noisy_motors", type=bool, default=True)
+    parser.add_argument("--noisy_motors", type=bool, default=False)
     parser.add_argument("--drone_model", type=str, default="cf2x")
     parser.add_argument("--flight_mode", type=int, default=8)
-    parser.add_argument("--simulate_wind", type=bool, default=True)
+    parser.add_argument("--simulate_wind", type=bool, default=False)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
-    parser.add_argument("--hovering_dome_size", type=float, default=10.0)
     parser.add_argument("--normalize_obs", type=bool, default=True)
     parser.add_argument("--normalize_actions", type=bool, default=True)
     parser.add_argument("--alpha", type=float, default=2)
     parser.add_argument("--beta", type=float, default=0.1)
-    parser.add_argument("--gamma", type=float, default=8)
+    parser.add_argument("--gamma", type=float, default=4)
     parser.add_argument("--delta", type=float, default=0.1)
 
     # Training Args
@@ -154,7 +153,6 @@ if __name__ == "__main__":
     env_kwargs["flight_dome_size"] = args.flight_dome_size
     env_kwargs["max_duration_seconds"] = args.max_duration_seconds
     env_kwargs["angle_representation"] = args.angle_representation
-    env_kwargs["hovering_dome_size"] = args.hovering_dome_size
     env_kwargs["normalize_actions"] = args.normalize_actions
     env_kwargs["alpha"] = args.alpha
     env_kwargs["beta"] = args.beta
@@ -183,21 +181,13 @@ if __name__ == "__main__":
 
     eval_callback = CustomEvalCallback(
         eval_env=eval_env,
-        n_eval_episodes=5,
+        n_eval_episodes=10,
         eval_freq=(args.eval_freq_multiplier * (args.update_each_steps) + 1),
         log_path=output_save_path,
         best_model_save_path=output_save_path,
         render=False,
         deterministic=True,
     )
-
-    # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_04_25_01_14_18/best_model_59_1201_0_22864_310.zip",
-    #     env=env,
-    #     tensorboard_log=tensorboard_log_path,
-    #     print_system_info=True,
-    #     verbose=1,
-    # )
 
     model = PPO(
         "MlpPolicy",
