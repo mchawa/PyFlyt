@@ -82,15 +82,15 @@ class QuadXBaseEnv(gymnasium.Env):
         maximum_z_distance = None
         if orn_conv == "ENU_FLU":
             minimum_z_distance = 0
-            maximum_z_distance = flight_dome_size + 20
+            maximum_z_distance = flight_dome_size + 25
         elif orn_conv == "NED_FRD":
-            minimum_z_distance = -(flight_dome_size + 20)
+            minimum_z_distance = -(flight_dome_size + 25)
             maximum_z_distance = 0
 
         self.obs_low = np.array(
             [
-                -(flight_dome_size + 20),  # Minimum X distance
-                -(flight_dome_size + 20),  # Minimum Y distance
+                -(flight_dome_size + 25),  # Minimum X distance
+                -(flight_dome_size + 25),  # Minimum Y distance
                 minimum_z_distance,  # Minimum Z distance
                 -50,  # Minimum X velocity
                 -50,  # Minimum Y velocity
@@ -109,8 +109,8 @@ class QuadXBaseEnv(gymnasium.Env):
         )
         self.obs_high = np.array(
             [
-                (flight_dome_size + 20),  # Maximum X distance
-                (flight_dome_size + 20),  # Maximum Y distance
+                (flight_dome_size + 25),  # Maximum X distance
+                (flight_dome_size + 25),  # Maximum Y distance
                 maximum_z_distance,  # Maximum Z distance
                 50,  # Maximum X velocity
                 50,  # Maximum Y velocity
@@ -333,13 +333,13 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # collision
         if np.any(self.env.contact_array):
-            self.reward = -100
+            self.reward = -1000
             self.info["collision"] = True
             self.termination |= True
 
         # linear distance error exceeding 10m
-        if np.linalg.norm(self.state[12:15]) > 10:
-            self.reward = -100
+        if np.linalg.norm(self.state[12:15]) > 20:
+            self.reward = -1000
             self.info["out_of_bounds"] = True
             self.termination |= True
 

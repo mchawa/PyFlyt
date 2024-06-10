@@ -47,12 +47,11 @@ class QuadXHoverEnv(QuadXBaseEnv):
         flight_dome_size: float = 100,
         max_duration_seconds: float = 10.0,
         angle_representation: str = "euler",
-        hovering_dome_size: float = 10.0,
         normalize_obs: bool = True,
         normalize_actions: bool = True,
         alpha: float = 2,
         beta: float = 0.1,
-        gamma: float = 8,
+        gamma: float = 4,
         delta: float = 0.1,
         render_mode: None | str = None,
         render_resolution: tuple[int, int] = (480, 480),
@@ -95,7 +94,6 @@ class QuadXHoverEnv(QuadXBaseEnv):
         """ENVIRONMENT CONSTANTS"""
         self.target_pos = np.array(target_pos, dtype=np.float32).round(3)
         self.target_psi = np.float32(target_psi).round(3)
-        self.hovering_dome_size = hovering_dome_size
         self.randomize_start = randomize_start
         self.alpha = alpha
         self.beta = beta
@@ -125,7 +123,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
 
             # Initialize the position
             self.start_pos = np.array(
-                self.target_pos + np.random.uniform(-1, 1, size=(3)),
+                self.target_pos + np.random.uniform(-10, 10, size=(3)),
                 dtype=np.float32,
                 ndmin=2,
             ).round(3)
@@ -189,7 +187,7 @@ class QuadXHoverEnv(QuadXBaseEnv):
         error_orientation = np.abs(self.state[15])
         error_angular_velocity = np.linalg.norm(self.state[9:12])
 
-        self.reward = 20 + (
+        self.reward = 35 + (
             (-self.alpha * error_distance)
             + (-self.beta * error_velocity)
             + (-self.gamma * error_orientation)
