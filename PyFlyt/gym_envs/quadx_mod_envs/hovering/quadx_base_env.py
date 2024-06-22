@@ -337,8 +337,8 @@ class QuadXBaseEnv(gymnasium.Env):
             self.info["collision"] = True
             self.termination |= True
 
-        # linear distance error exceeding 10m
-        if np.linalg.norm(self.state[12:15]) > 20:
+        # linear distance error exceeding 20m
+        if np.any(np.abs(self.state[12:15])) > 20:
             self.reward = -1000
             self.info["out_of_bounds"] = True
             self.termination |= True
@@ -378,8 +378,9 @@ class QuadXBaseEnv(gymnasium.Env):
         # Nomralize the observation
         state = None
         if self.normalize_obs:
+            state = np.clip(self.state, self.obs_low, self.obs_high)
             state = (
-                ((self.state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
+                ((state - self.obs_low) / (self.obs_high - self.obs_low)) * 2 - 1
             ).astype(np.float32)
         else:
             state = self.state
@@ -409,12 +410,6 @@ class QuadXBaseEnv(gymnasium.Env):
                 )
 
                 self.logger.log_episode()
-
-        # print(
-        #     "State:\n \tLinear Error: X={}, Y={}, Z={}\nAction: {}\nReward: {}\n\n".format(
-        #         self.state[-3], self.state[-2], self.state[-3], self.action, self.reward
-        #     )
-        # )
 
         return state, self.reward, self.termination, self.truncation, self.info
 

@@ -101,10 +101,10 @@ class QuadXBaseEnv(gymnasium.Env):
                 -130,  # Minimum p angular velocity
                 -130,  # Minimum q angular velocity
                 -130,  # Minimum r angular velocity
-                -20,  # Minimum X lin_pos error
-                -20,  # Minimum Y lin_pos error
-                -20,  # Minimum Z lin_pos error
-                -np.pi,  # Minimum Psi error angle
+                -20,  # Minimum X distance error
+                -20,  # Minimum Y distance error
+                -20,  # Minimum Z distance error
+                -np.pi,  # Minimum Psi angle error
             ]
         )
         self.obs_high = np.array(
@@ -121,10 +121,10 @@ class QuadXBaseEnv(gymnasium.Env):
                 130,  # Maximum p angular velocity
                 130,  # Maximum q angular velocity
                 130,  # Maximum r angular velocity
-                20,  # Maximum X lin_pos error
-                20,  # Maximum Y lin_pos error
-                20,  # Maximum Z lin_pos error
-                np.pi,  # Maximum Psi error angle
+                20,  # Maximum X distance error
+                20,  # Maximum Y distance error
+                20,  # Maximum Z distance error
+                np.pi,  # Maximum Psi angle error
             ]
         )
 
@@ -327,11 +327,6 @@ class QuadXBaseEnv(gymnasium.Env):
 
     def compute_base_term_trunc_reward(self) -> None:
         """compute_base_term_trunc_reward."""
-
-        # if self.num_targets_reached == self.num_of_targets:
-        #     self.info["env_complete"] = True
-        #     self.truncation |= True
-
         # exceed step count
         if self.step_count >= self.max_steps:
             self.info["TimeLimit.truncated"] = True
@@ -339,13 +334,13 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # collision
         if np.any(self.env.contact_array):
-            self.reward = -100
+            self.reward = -1000
             self.info["collision"] = True
             self.termination |= True
 
         # linear distance error exceeding 20m
-        if np.linalg.norm(self.lin_pos_error) > 20:
-            self.reward = -100
+        if np.any(np.abs(self.state[12:15])) > 20:
+            self.reward = -1000
             self.info["out_of_bounds"] = True
             self.termination |= True
 
@@ -395,7 +390,7 @@ class QuadXBaseEnv(gymnasium.Env):
         self.step_count += 1
 
         # log the episode
-        if self.logger is not None:
+        if self.logger != None:
             self.logger.add(
                 self.step_count - 1,
                 old_state,

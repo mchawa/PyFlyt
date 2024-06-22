@@ -64,6 +64,7 @@ if __name__ == "__main__":
         default=[[5.0, 5.0, -7.0], [5.0, -5.0, -7.0], [5.0, 5.0, -7.0]],
     )
     parser.add_argument("--goal_reach_distance", type=float, default=0.3)
+    parser.add_argument("--goal_reach_angle", type=float, default=np.deg2rad(5))
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
     parser.add_argument("--noisy_motors", type=bool, default=True)
@@ -151,6 +152,8 @@ if __name__ == "__main__":
     env_kwargs["start_pos"] = np.array([args.start_pos])
     env_kwargs["start_orn"] = np.array([args.start_orn])
     env_kwargs["random_trajectory"] = args.random_trajectory
+    env_kwargs["goal_reach_distance"] = args.goal_reach_distance
+    env_kwargs["goal_reach_angle"] = args.goal_reach_angle
     env_kwargs["waypoints"] = np.array(args.waypoints)
     env_kwargs["min_pwm"] = args.min_pwm
     env_kwargs["max_pwm"] = args.max_pwm
@@ -199,24 +202,24 @@ if __name__ == "__main__":
         deterministic=True,
     )
 
-    # model = PPO.load(
-    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following/trained_models/2024_05_14_00_34_19/best_model_10_1601_0_9312_593.zip",
-    #     env=env,
-    #     tensorboard_log=tensorboard_log_path,
-    #     print_system_info=True,
-    #     verbose=1,
-    # )
-
-    model = PPO(
-        "MlpPolicy",
-        env,
-        batch_size=args.batch_size,
-        n_steps=args.update_each_steps,
-        n_epochs=args.n_epochs,
+    model = PPO.load(
+        path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_slow/trained_models/2024_06_20_19_26_32/best_model_10_801_0_25770_912.zip",
+        env=env,
         tensorboard_log=tensorboard_log_path,
-        policy_kwargs=policy_kwargs,
+        print_system_info=True,
         verbose=1,
     )
+
+    # model = PPO(
+    #     "MlpPolicy",
+    #     env,
+    #     batch_size=args.batch_size,
+    #     n_steps=args.update_each_steps,
+    #     n_epochs=args.n_epochs,
+    #     tensorboard_log=tensorboard_log_path,
+    #     policy_kwargs=policy_kwargs,
+    #     verbose=1,
+    # )
 
     model.learn(total_timesteps=args.num_of_steps, callback=eval_callback)
 

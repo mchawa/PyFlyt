@@ -58,10 +58,10 @@ if __name__ == "__main__":
     parser.add_argument("--start_orn", type=float, nargs="+", default=[0.0, 0.0, 0.0])
     parser.add_argument("--min_pwm", type=float, default=0.0)
     parser.add_argument("--max_pwm", type=float, default=1.0)
-    parser.add_argument("--noisy_motors", type=bool, default=False)
+    parser.add_argument("--noisy_motors", type=bool, default=True)
     parser.add_argument("--drone_model", type=str, default="cf2x")
     parser.add_argument("--flight_mode", type=int, default=8)
-    parser.add_argument("--simulate_wind", type=bool, default=False)
+    parser.add_argument("--simulate_wind", type=bool, default=True)
     parser.add_argument("--flight_dome_size", type=float, default=100)
     parser.add_argument("--max_duration_seconds", type=float, default=10.0)
     parser.add_argument("--angle_representation", type=str, default="euler")
@@ -124,15 +124,10 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, signal_handler)  # Register the signal handler
 
-    # net_arch = [args.layer_size for _ in range(args.num_of_layers)]
-    # net_arch = dict(vf=[256, 128, 64, 32], pi=[256, 128, 64, 32])
-    # net_arch.append({"vf": [128], "pi": [64]})
+    # net_arch = dict(pi=[64, 64, 32, 32], vf=[64, 64, 32, 32])
 
     # policy_kwargs = {
     #     "net_arch": net_arch,
-    #     "features_extractor_class": CustomFeatureExtractor,
-    #     "features_extractor_kwargs": {"features_dim": 256},
-    #     "share_features_extractor": True,
     # }
 
     # Create hovering environment
@@ -188,6 +183,14 @@ if __name__ == "__main__":
         render=False,
         deterministic=True,
     )
+
+    # model = PPO.load(
+    #     path="/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/hovering/trained_models/2024_06_20_06_39_11/best_model_22_801_0_25618_754.zip",
+    #     env=env,
+    #     tensorboard_log=tensorboard_log_path,
+    #     print_system_info=True,
+    #     verbose=1,
+    # )
 
     model = PPO(
         "MlpPolicy",

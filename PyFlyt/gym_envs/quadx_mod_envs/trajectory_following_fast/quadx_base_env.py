@@ -347,13 +347,13 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # collision
         if np.any(self.env.contact_array):
-            self.reward = -100
+            self.reward = -1000
             self.info["collision"] = True
             self.termination |= True
 
         # linear distance error exceeding 20m
-        if np.linalg.norm(self.lin_pos_error) > 20:
-            self.reward = -100
+        if np.any(np.abs(self.state[12:15])) > 20:
+            self.reward = -1000
             self.info["out_of_bounds"] = True
             self.termination |= True
 
@@ -403,7 +403,7 @@ class QuadXBaseEnv(gymnasium.Env):
         self.step_count += 1
 
         # log the episode
-        if self.logger is not None:
+        if self.logger != None:
             self.logger.add(
                 self.step_count - 1,
                 old_state,

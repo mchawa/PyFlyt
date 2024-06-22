@@ -3,9 +3,9 @@ from stable_baselines3.common.type_aliases import PolicyPredictor
 
 
 class HoveringPIDExpert(PolicyPredictor):
-    def __init__(self, taget_pos, target_psi):
-        self.target_pos = taget_pos
-        self.target_psi = target_psi
+    def __init__(self):
+        self.target_pos = [0, 0, 0]
+        self.target_psi = 0
 
         self.set_point = np.array(
             [

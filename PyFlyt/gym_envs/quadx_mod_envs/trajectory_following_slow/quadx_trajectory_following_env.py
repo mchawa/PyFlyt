@@ -220,12 +220,6 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                         rgbaColor=(0, 1 - (i / len(self.target_visual)), 0, 1),
                     )
 
-        self.lin_pos_error = self.target_pos - self.start_pos[0]
-        self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-        self.yaw_error = ((self.target_psi - self.start_orn[0][2]) + np.pi) % (
-            2 * np.pi
-        ) - np.pi
-
         super().end_reset(seed, options)
 
         return self.state, self.info
@@ -245,15 +239,13 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
 
         ang_pos = (ang_pos + np.pi) % (2 * np.pi) - np.pi
 
-        self.lin_pos_error = np.array(self.target_pos - lin_pos)
-        self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-
-        self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
+        lin_pos_error = np.array(self.target_pos - lin_pos)
+        yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
 
         if (
-            np.linalg.norm(self.lin_pos_error) < self.goal_reach_distance
+            np.linalg.norm(lin_pos_error) < self.goal_reach_distance
+            and np.abs(yaw_error) < self.goal_reach_angle
             and np.linalg.norm(lin_vel) < 1
-            and np.abs(self.yaw_error) < self.goal_reach_angle
         ):
             if not self.random_trajectory:
                 if self.current_target_index < self.num_of_targets - 1:
@@ -262,12 +254,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 self.target_pos = self.waypoints[self.current_target_index][0:3]
                 self.target_psi = self.waypoints[self.current_target_index][3]
 
-                self.lin_pos_error = self.target_pos - lin_pos
-                self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-
-                self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
-                    2 * np.pi
-                ) - np.pi
+                lin_pos_error = self.target_pos - lin_pos
+                yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
 
                 if self.draw_waypoints and len(self.target_visual) > 0:
                     self.env.removeBody(self.target_visual[0])
@@ -310,12 +298,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 self.target_psi = np.random.uniform(-np.pi, np.pi)
                 self.target_pos = new_waypoint
 
-                self.lin_pos_error = self.target_pos - lin_pos
-                self.current_lin_pos_erro_mag = np.linalg.norm(self.lin_pos_error)
-
-                self.yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (
-                    2 * np.pi
-                ) - np.pi
+                lin_pos_error = self.target_pos - lin_pos
+                yaw_error = (self.target_psi - ang_pos[2] + np.pi) % (2 * np.pi) - np.pi
 
                 if self.draw_waypoints:
                     if self.orn_conv == "NED_FRD":
@@ -344,8 +328,8 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
                 *lin_vel,
                 *ang_pos,
                 *ang_vel,
-                *self.lin_pos_error,
-                self.yaw_error,
+                *lin_pos_error,
+                yaw_error,
             ],
             dtype=np.float32,
         ).round(3)
@@ -357,12 +341,14 @@ class QuadXTrajectoryFollowingrEnv(QuadXBaseEnv):
         if self.termination:
             return
 
+        error_distance = np.linalg.norm(self.state[12:15])
+        error_orientation = np.abs(self.state[15])
         error_angular_velocity = np.linalg.norm(self.state[9:12])
 
-        self.reward = 20 * self.current_target_index
+        self.reward = 40 * self.current_target_index
         self.reward += (
-            20
-            - (self.alpha * self.current_lin_pos_erro_mag)
-            - (self.beta * np.abs(self.yaw_error))
+            35
+            - (self.alpha * error_distance)
+            - (self.beta * error_orientation)
             - (self.gamma * error_angular_velocity)
         )

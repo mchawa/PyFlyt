@@ -3,8 +3,8 @@ from stable_baselines3.common.type_aliases import PolicyPredictor
 
 
 class TrajectoryFollowingPIDExpert(PolicyPredictor):
-    def __init__(self, taget_pos):
-        self.target_pos = taget_pos
+    def __init__(self):
+        self.target_pos = [0, 0, 0]
         self.target_psi = 0
 
         self.set_point = np.array(
