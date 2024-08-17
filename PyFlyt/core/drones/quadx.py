@@ -12,6 +12,7 @@ from PyFlyt.core.abstractions.base_controller import ControlClass
 from PyFlyt.core.abstractions.base_drone import DroneClass
 from PyFlyt.core.abstractions.boring_bodies import BoringBodies
 from PyFlyt.core.abstractions.camera import Camera
+from PyFlyt.core.abstractions.ga_pid import ga_pid_step
 from PyFlyt.core.abstractions.motors import Motors
 from PyFlyt.core.abstractions.pid import PID
 
@@ -275,7 +276,7 @@ class QuadX(DroneClass):
         Args:
             mode (int): flight mode
         """
-        if (mode < -1 or mode > 9) and mode not in self.registered_controllers.keys():
+        if (mode < -1 or mode > 10) and mode not in self.registered_controllers.keys():
             raise ValueError(
                 f"`mode` must be between -1 and 9 or be registered in {self.registered_controllers.keys()=}, got {mode}."
             )
@@ -289,7 +290,7 @@ class QuadX(DroneClass):
 
         # mode -1 means no controller present
         # mode 8 and 9 are added custom controllers
-        if mode == -1 or mode in [8, 9]:
+        if mode == -1 or mode in [8, 9, 10]:
             return
 
         # preset setpoints on mode change
@@ -456,6 +457,9 @@ class QuadX(DroneClass):
                 # mix the commands according to motor mix
                 cmd = np.hstack((a_output, z_output))
                 self.pwm = np.matmul(self.motor_map, cmd)
+        elif mode == 10:
+            cmd = ga_pid_step(self.state, self.setpoint)
+            self.pwm = np.matmul(self.motor_map, cmd)
         else:
             # base level controllers
             if mode in [0, 2]:

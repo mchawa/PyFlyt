@@ -166,7 +166,7 @@ class QuadXBaseEnv(gymnasium.Env):
             else:
                 low = self.action_low
                 high = self.action_high
-        elif flight_mode == 7:
+        elif flight_mode in [7, 10]:
             self.action_low = np.array([-np.inf, -np.inf, -np.inf, -np.inf])
             self.action_high = np.array([np.inf, np.inf, np.inf, np.inf])
             low = self.action_low
