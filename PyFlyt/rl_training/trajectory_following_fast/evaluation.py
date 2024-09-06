@@ -17,7 +17,7 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_fast/trained_models/2024_05_30_02_55_23/best_model_6_2401_0_37612_2472.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_fast/trained_models/2024_06_22_19_02_49/best_model_21_2401_0_38644_2987.zip"
 
 log_dir = model_path.replace(".zip", "_results")
 
@@ -108,7 +108,7 @@ eval_env_kwargs["base_wind_velocities"] = base_wind_velocity_scenario_3
 eval_env_kwargs["max_gust_strength"] = 7.0
 # eval_env_kwargs["max_gust_strength"] = None
 eval_env_kwargs["flight_dome_size"] = 100
-eval_env_kwargs["max_duration_seconds"] = 30
+eval_env_kwargs["max_duration_seconds"] = 20
 eval_env_kwargs["angle_representation"] = "euler"
 eval_env_kwargs["normalize_actions"] = True
 eval_env_kwargs["normalize_obs"] = True
@@ -116,10 +116,10 @@ eval_env_kwargs["alpha"] = 10
 eval_env_kwargs["beta"] = 1
 eval_env_kwargs["gamma"] = 0.2
 eval_env_kwargs["draw_waypoints"] = True
-eval_env_kwargs["render_mode"] = "human"
-# eval_env_kwargs["render_mode"] = None
-# eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
-eval_env_kwargs["logger"] = None
+# eval_env_kwargs["render_mode"] = "human"
+eval_env_kwargs["render_mode"] = None
+eval_env_kwargs["logger"] = Logger(log_dir=log_dir)
+# eval_env_kwargs["logger"] = None
 
 eval_env = QuadXTrajectoryFollowingrEnv(**eval_env_kwargs)
 

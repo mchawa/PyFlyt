@@ -1,12 +1,13 @@
-import argparse
-import datetime
-import json
+# import argparse
+# import datetime
+# import json
 import multiprocessing as mp
-import os
+
+# import os
 import sys
 from pathlib import Path
 
-import gymnasium as gym
+# import gymnasium as gym
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -23,7 +24,7 @@ project_dir = str(Path(__file__).resolve().parent.parent.parent)
 if project_dir not in sys.path:
     sys.path.append(project_dir)
 
-model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_slow/trained_models/2024_06_20_19_26_32/best_model_10_801_0_25770_912.zip"
+model_path = "/home/mchawa/WS/PyFlyt_Fork/PyFlyt/PyFlyt/rl_training/trajectory_following_slow/trained_models/2024_06_22_04_02_48/best_model_3_2401_0_216293_103542.zip"
 
 log_dir = model_path.replace(".zip", "_results")
 

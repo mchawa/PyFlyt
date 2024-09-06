@@ -390,14 +390,24 @@ class QuadXBaseEnv(gymnasium.Env):
 
         # log the episode
         if self.logger != None:
-            self.logger.add(
-                self.step_count - 1,
-                self.target_pos,
-                self.target_psi,
-                old_state,
-                action,
-                self.reward,
-            )
+            if self.flight_mode in [7, 10]:
+                self.logger.add(
+                    self.step_count - 1,
+                    self.target_pos,
+                    self.target_psi,
+                    old_state,
+                    self.env.drones[0].pwm,
+                    self.reward,
+                )
+            else:
+                self.logger.add(
+                    self.step_count - 1,
+                    self.target_pos,
+                    self.target_psi,
+                    old_state,
+                    self.action,
+                    self.reward,
+                )
 
             if self.termination or self.truncation:
                 self.logger.add(
